@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:codec/codec.dart';
 
 abstract interface class Serializer<T> {
+  void boolean(bool value);
+
   void i8(int value);
   void u8(int value);
 

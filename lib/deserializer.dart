@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:codec/codec.dart';
 
 abstract interface class Deserializer<T> {
+  void boolean();
+
   int i8();
   int u8();
 
@@ -26,6 +28,10 @@ abstract interface class Deserializer<T> {
   StructDeserializer struct();
 }
 
+abstract interface class SelfDescribingDeserializer<T> extends Deserializer<T> {
+  Object any();
+}
+
 abstract interface class SequenceDeserializer<E> {
   bool moveNext();
   E element();
@@ -38,4 +44,8 @@ abstract interface class MapDeserializer<V> {
 
 abstract interface class StructDeserializer {
   F field<F>(Codec<F> codec);
+}
+
+abstract interface class NamedStructDeserializer extends StructDeserializer {
+  F? namedField<F>(String name, Codec<F> codec);
 }

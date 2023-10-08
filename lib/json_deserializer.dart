@@ -11,7 +11,7 @@ T fromJson<T>(Codec<T> codec, Object json) {
   return codec.decode(deserializer);
 }
 
-class JsonDeserializer implements Deserializer<Object> {
+class JsonDeserializer implements SelfDescribingDeserializer<Object> {
   final Queue<JsonSource> _sources = Queue();
   final Object _serialized;
 
@@ -20,6 +20,12 @@ class JsonDeserializer implements Deserializer<Object> {
   }
 
   T _getObject<T>() => _sources.last() as T;
+
+  @override
+  bool boolean() => _getObject();
+
+  @override
+  Object any() => _getObject();
 
   @override
   int i8() => _getObject();
@@ -64,18 +70,20 @@ class JsonDeserializer implements Deserializer<Object> {
   void _popSource() => _sources.removeLast();
 }
 
-class _JsonMapDeserializer<V> implements MapDeserializer<V>, StructDeserializer {
+class _JsonMapDeserializer<V> implements MapDeserializer<V>, NamedStructDeserializer {
   final JsonDeserializer _context;
   final Codec<V>? _valueCodec;
+
+  final Map<String, dynamic> _map;
   final Iterator<MapEntry<String, dynamic>> _entries;
 
-  _JsonMapDeserializer.map(this._context, Codec<V> valueCodec, Map<String, dynamic> map)
+  _JsonMapDeserializer.map(this._context, Codec<V> valueCodec, this._map)
       : _valueCodec = valueCodec,
-        _entries = map.entries.iterator;
+        _entries = _map.entries.iterator;
 
-  _JsonMapDeserializer.struct(this._context, Map<String, dynamic> map)
+  _JsonMapDeserializer.struct(this._context, this._map)
       : _valueCodec = null,
-        _entries = map.entries.iterator;
+        _entries = _map.entries.iterator;
 
   @override
   bool moveNext() => _entries.moveNext();
@@ -85,17 +93,25 @@ class _JsonMapDeserializer<V> implements MapDeserializer<V>, StructDeserializer 
   @override
   F field<F>(Codec<F> codec) => _kvPair(codec, true).$2;
 
-  (String, T) _kvPair<T>(Codec<T> codec, bool move) {
-    if (move) _entries.moveNext();
+  @override
+  F? namedField<F>(String name, Codec<F> codec) {
+    if (!_map.containsKey(name)) return null;
 
-    final entry = _entries.current;
-    Object source() => entry.value;
-
-    _context._pushSource(source);
+    _context._pushSource(() => _map[name]);
     final decoded = codec.decode(_context);
     _context._popSource();
 
-    return (entry.key, decoded);
+    return decoded;
+  }
+
+  (String, T) _kvPair<T>(Codec<T> codec, bool move) {
+    if (move) _entries.moveNext();
+
+    _context._pushSource(() => _entries.current.value);
+    final decoded = codec.decode(_context);
+    _context._popSource();
+
+    return (_entries.current.key, decoded);
   }
 }
 
@@ -111,10 +127,7 @@ class _JsonSequenceDeserializer<V> implements SequenceDeserializer<V> {
 
   @override
   V element() {
-    final serialized = _entries.current;
-    Object source() => serialized;
-
-    _context._pushSource(source);
+    _context._pushSource(() => _entries.current);
     final decoded = _elementCodec.decode(_context);
     _context._popSource();
 

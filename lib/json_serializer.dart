@@ -23,6 +23,9 @@ class JsonSerializer implements Serializer<Object> {
   void _sink(Object jsonValue) => _sinks.last(jsonValue);
 
   @override
+  void boolean(bool value) => _sink(value);
+
+  @override
   void i8(int value) => _sink(value);
   @override
   void u8(int value) => _sink(value);

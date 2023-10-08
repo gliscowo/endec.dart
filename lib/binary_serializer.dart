@@ -9,6 +9,9 @@ class BinarySerializer implements Serializer<Uint8List> {
   int _cursor = 0;
 
   @override
+  void boolean(bool value) => u8(value ? 1 : 0);
+
+  @override
   void i8(int value) => _write((idx, value, _) => _buffer.setInt8(idx, value), value, 1);
   @override
   void u8(int value) => _write((idx, value, _) => _buffer.setUint8(idx, value), value, 1);
