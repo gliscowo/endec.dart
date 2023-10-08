@@ -11,81 +11,33 @@ class BinaryDeserializer implements Deserializer<Uint8List> {
   BinaryDeserializer(this._buffer);
 
   @override
-  int i8() {
-    final value = _buffer.getInt8(_cursor);
-    _cursor++;
-
-    return value;
-  }
+  int i8() => _read((idx, _) => _buffer.getInt8(idx), 1);
+  @override
+  int u8() => _read((idx, _) => _buffer.getUint8(idx), 1);
 
   @override
-  int u8() {
-    final value = _buffer.getUint8(_cursor);
-    _cursor++;
-
-    return value;
-  }
+  int i16() => _read(_buffer.getInt16, 2);
+  @override
+  int u16() => _read(_buffer.getUint16, 2);
 
   @override
-  int i16() {
-    final value = _buffer.getInt16(_cursor, Endian.little);
-    _cursor += 2;
-
-    return value;
-  }
+  int i32() => _read(_buffer.getInt32, 4);
+  @override
+  int u32() => _read(_buffer.getUint32, 4);
 
   @override
-  int u16() {
-    final value = _buffer.getUint16(_cursor, Endian.little);
-    _cursor += 2;
-
-    return value;
-  }
+  int i64() => _read(_buffer.getInt64, 8);
+  @override
+  int u64() => _read(_buffer.getUint64, 8);
 
   @override
-  int i32() {
-    final value = _buffer.getInt32(_cursor, Endian.little);
-    _cursor += 4;
-
-    return value;
-  }
-
+  double f32() => _read(_buffer.getFloat32, 4);
   @override
-  int u32() {
-    final value = _buffer.getUint32(_cursor, Endian.little);
-    _cursor += 4;
+  double f64() => _read(_buffer.getFloat64, 8);
 
-    return value;
-  }
-
-  @override
-  int i64() {
-    final value = _buffer.getInt64(_cursor, Endian.little);
-    _cursor += 8;
-
-    return value;
-  }
-
-  @override
-  int u64() {
-    final value = _buffer.getUint64(_cursor, Endian.little);
-    _cursor += 8;
-
-    return value;
-  }
-
-  @override
-  double f32() {
-    final value = _buffer.getFloat32(_cursor, Endian.little);
-    _cursor += 4;
-
-    return value;
-  }
-
-  @override
-  double f64() {
-    final value = _buffer.getFloat64(_cursor, Endian.little);
-    _cursor += 8;
+  T _read<T>(T Function(int idx, Endian) reader, int size) {
+    final value = reader(_cursor, Endian.little);
+    _cursor += size;
 
     return value;
   }

@@ -9,83 +9,35 @@ class BinarySerializer implements Serializer<Uint8List> {
   int _cursor = 0;
 
   @override
-  void i8(int value) {
-    _ensureCapacity(1);
-
-    _buffer.setInt8(_cursor, value);
-    _cursor++;
-  }
+  void i8(int value) => _write((idx, value, _) => _buffer.setInt8(idx, value), value, 1);
+  @override
+  void u8(int value) => _write((idx, value, _) => _buffer.setUint8(idx, value), value, 1);
 
   @override
-  void u8(int value) {
-    _ensureCapacity(1);
-
-    _buffer.setUint8(_cursor, value);
-    _cursor++;
-  }
+  void i16(int value) => _write(_buffer.setInt16, value, 2);
+  @override
+  void u16(int value) => _write(_buffer.setUint16, value, 2);
 
   @override
-  void i16(int value) {
-    _ensureCapacity(2);
-
-    _buffer.setInt16(_cursor, value, Endian.little);
-    _cursor += 2;
-  }
+  void i32(int value) => _write(_buffer.setInt32, value, 4);
+  @override
+  void u32(int value) => _write(_buffer.setUint32, value, 4);
 
   @override
-  void u16(int value) {
-    _ensureCapacity(2);
-
-    _buffer.setUint16(_cursor, value, Endian.little);
-    _cursor += 2;
-  }
+  void i64(int value) => _write(_buffer.setInt64, value, 8);
+  @override
+  void u64(int value) => _write(_buffer.setUint64, value, 8);
 
   @override
-  void i32(int value) {
-    _ensureCapacity(4);
-
-    _buffer.setInt32(_cursor, value, Endian.little);
-    _cursor += 4;
-  }
-
+  void f32(double value) => _write(_buffer.setFloat32, value, 4);
   @override
-  void u32(int value) {
-    _ensureCapacity(4);
+  void f64(double value) => _write(_buffer.setFloat64, value, 8);
 
-    _buffer.setUint32(_cursor, value, Endian.little);
-    _cursor += 4;
-  }
+  void _write<T>(void Function(int idx, T value, Endian) writer, T value, int size) {
+    _ensureCapacity(size);
 
-  @override
-  void i64(int value) {
-    _ensureCapacity(8);
-
-    _buffer.setInt64(_cursor, value, Endian.little);
-    _cursor += 8;
-  }
-
-  @override
-  void u64(int value) {
-    _ensureCapacity(8);
-
-    _buffer.setUint64(_cursor, value, Endian.little);
-    _cursor += 8;
-  }
-
-  @override
-  void f32(double value) {
-    _ensureCapacity(4);
-
-    _buffer.setFloat32(_cursor, value, Endian.little);
-    _cursor += 4;
-  }
-
-  @override
-  void f64(double value) {
-    _ensureCapacity(8);
-
-    _buffer.setFloat64(_cursor, value, Endian.little);
-    _cursor += 8;
+    writer(_cursor, value, Endian.little);
+    _cursor += size;
   }
 
   @override
