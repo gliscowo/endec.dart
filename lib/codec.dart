@@ -15,15 +15,16 @@ abstract mixin class Codec<T> {
   void encode<S>(Serializer<S> serializer, T value);
   T decode<S>(Deserializer<S> deserializer);
 
-  ListCodec<T> listOf() => ListCodec(this);
-  MapCodec<T> mapOf() => MapCodec(this);
+  Codec<List<T>> listOf() => _ListCodec(this);
+  Codec<Map<String, T>> mapOf() => _MapCodec(this);
+  Codec<T?> optionalOf() => _OptionalCodec(this);
 
   Codec<U> xmap<U>(U Function(T self) to, T Function(U other) from) => _XmapCodec(this, to, from);
 }
 
-class ListCodec<T> with Codec<List<T>> {
+class _ListCodec<T> with Codec<List<T>> {
   final Codec<T> elementCodec;
-  ListCodec(this.elementCodec);
+  _ListCodec(this.elementCodec);
 
   @override
   void encode<S>(Serializer<S> serializer, List<T> value) {
@@ -47,9 +48,9 @@ class ListCodec<T> with Codec<List<T>> {
   }
 }
 
-class MapCodec<T> with Codec<Map<String, T>> {
+class _MapCodec<T> with Codec<Map<String, T>> {
   final Codec<T> valueCodec;
-  MapCodec(this.valueCodec);
+  _MapCodec(this.valueCodec);
 
   @override
   void encode<S>(Serializer<S> serializer, Map<String, T> value) {
@@ -72,6 +73,16 @@ class MapCodec<T> with Codec<Map<String, T>> {
 
     return result;
   }
+}
+
+class _OptionalCodec<T> with Codec<T?> {
+  final Codec<T> _valueCodec;
+  _OptionalCodec(this._valueCodec);
+
+  @override
+  T? decode<S>(Deserializer<S> deserializer) => deserializer.optional(_valueCodec);
+  @override
+  void encode<S>(Serializer<S> serializer, T? value) => serializer.optional(_valueCodec, value);
 }
 
 class _XmapCodec<T, U> with Codec<U> {

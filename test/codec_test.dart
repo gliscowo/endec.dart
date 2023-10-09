@@ -1,8 +1,13 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
+import 'package:codec/binary/binary_deserializer.dart';
+import 'package:codec/binary/binary_serializer.dart';
 import 'package:codec/codec.dart';
-import 'package:codec/json_deserializer.dart';
-import 'package:codec/json_serializer.dart';
+import 'package:codec/json/json_codec.dart';
+import 'package:codec/json/json_deserializer.dart';
+import 'package:codec/json/json_serializer.dart';
+import 'package:codec/struct_codec.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -15,25 +20,27 @@ void main() {
   });
 
   test('encode struct', () {
-    var serializer = JsonSerializer();
+    var codec = structCodec<_Struct>().codec4(
+      Codec.string.field("a_field", (struct) => struct.aField),
+      Codec.string.mapOf().field("a_nested_field", (struct) => struct.aNestedField),
+      Codec.double.listOf().field("list_moment", (struct) => struct.listMoment),
+      Codec.string.field("another_field", (struct) => struct.anotherField),
+      _Struct.new,
+    );
 
-    serializer.struct()
-      ..field("a field", Codec.string, "an epic field value")
-      ..field("a nested field", Codec.string.mapOf(), {"a": "bruh", "b": "nested field value, epic"})
-      ..field("list moment", Codec.double.listOf(), [1.0, 5.7, double.maxFinite])
-      ..field("another field", Codec.string, "this too")
-      ..end();
-
-    var serialized = jsonEncoder.convert(serializer.result);
+    var serialized = toJson(
+      codec.named,
+      _Struct(
+        "an epic field value",
+        {"a": "bruh", "b": "nested field value, epic"},
+        [1.0, 5.7, double.maxFinite],
+        "this too",
+      ),
+    );
     print(serialized);
 
-    var state = JsonDeserializer(jsonDecode(serialized)).struct();
-    final field1 = state.field(Codec.string);
-    final field2 = state.field(Codec.string.mapOf());
-    final field3 = state.field(Codec.double.listOf());
-    final field4 = state.field(Codec.string);
-
-    print("Deserialized: $field1, $field2, $field3, $field4");
+    var decoded = fromJson(codec.named, serialized);
+    print("Deserialized: ${decoded.aField}, ${decoded.aNestedField}, ${decoded.listMoment}, ${decoded.anotherField}");
   });
 
   test('xmap string to codepoints', () {
@@ -45,4 +52,41 @@ void main() {
     final decoded = fromJson(codepointCodec, jsonDecode(serialized));
     print("decoded: $decoded");
   });
+
+  test('encode json to binary', () {
+    var json = {
+      "a field": "some json here",
+      "another_field": [
+        1.0,
+        {"hmmm": null}
+      ]
+    };
+
+    var serializer = BinarySerializer();
+    jsonCodec.encode(serializer, json);
+
+    expect(jsonCodec.decode(BinaryDeserializer(ByteData.view(serializer.result.buffer))), json);
+  });
+
+  test('encode json to json', () {
+    var json = {
+      "a field": "some json here",
+      "another_field": [
+        1.0,
+        {"hmmm": null}
+      ]
+    };
+
+    var encoded = toJson(jsonCodec, json);
+    expect(json, encoded);
+  });
+}
+
+class _Struct {
+  final String aField;
+  final Map<String, String> aNestedField;
+  final List<double> listMoment;
+  final String anotherField;
+
+  _Struct(this.aField, this.aNestedField, this.listMoment, this.anotherField);
 }

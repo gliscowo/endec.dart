@@ -4,6 +4,7 @@ import 'package:codec/codec.dart';
 
 abstract interface class Serializer<T> {
   void boolean(bool value);
+  void optional<E>(Codec<E> codec, E? value);
 
   void i8(int value);
   void u8(int value);
@@ -28,6 +29,7 @@ abstract interface class Serializer<T> {
   StructSerializer struct();
 
   T get result;
+  bool get selfDescribing;
 }
 
 abstract interface class SequenceSerializer<E> {

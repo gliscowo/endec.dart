@@ -10,9 +10,12 @@ Object toJson<T>(Codec<T> codec, T value) {
   return serializer.result;
 }
 
-typedef JsonSink = void Function(Object jsonValue);
+typedef JsonSink = void Function(Object? jsonValue);
 
 class JsonSerializer implements Serializer<Object> {
+  @override
+  final bool selfDescribing = true;
+
   final Queue<JsonSink> _sinks = Queue();
   Object? _result;
 
@@ -20,10 +23,18 @@ class JsonSerializer implements Serializer<Object> {
     _sinks.add((jsonValue) => _result = jsonValue);
   }
 
-  void _sink(Object jsonValue) => _sinks.last(jsonValue);
+  void _sink(Object? jsonValue) => _sinks.last(jsonValue);
 
   @override
   void boolean(bool value) => _sink(value);
+  @override
+  void optional<E>(Codec<E> codec, E? value) {
+    if (value != null) {
+      codec.encode(this, value);
+    } else {
+      _sink(null);
+    }
+  }
 
   @override
   void i8(int value) => _sink(value);
@@ -72,7 +83,7 @@ class JsonSerializer implements Serializer<Object> {
 class _JsonMapSerializer<V> implements MapSerializer<V>, StructSerializer {
   final JsonSerializer _context;
   final Codec<V>? _valueCodec;
-  final Map<String, Object> _result = {};
+  final Map<String, Object?> _result = {};
 
   _JsonMapSerializer.map(this._context, Codec<V> valueCodec) : _valueCodec = valueCodec;
   _JsonMapSerializer.struct(this._context) : _valueCodec = null;
@@ -83,15 +94,18 @@ class _JsonMapSerializer<V> implements MapSerializer<V>, StructSerializer {
   void field<F, _V extends F>(String key, Codec<F> codec, _V value) => _kvPair(key, codec, value);
 
   void _kvPair<T>(String key, Codec<T> codec, T value) {
+    var serialized = false;
     Object? encodedValue;
-    void sink(Object value) => encodedValue = value;
 
-    _context._pushSink(sink);
+    _context._pushSink((jsonValue) {
+      serialized = true;
+      encodedValue = jsonValue;
+    });
     codec.encode(_context, value);
     _context._popSink();
 
-    if (encodedValue == null) throw JsonEncodeError("No field was serialized");
-    _result[key] = encodedValue!;
+    if (!serialized) throw JsonEncodeError("No field was serialized");
+    _result[key] = encodedValue;
   }
 
   @override
@@ -101,21 +115,24 @@ class _JsonMapSerializer<V> implements MapSerializer<V>, StructSerializer {
 class _JsonSequenceSerializer<V> implements SequenceSerializer<V> {
   final JsonSerializer _context;
   final Codec<V> _elementCodec;
-  final List<Object> _result = [];
+  final List<Object?> _result = [];
 
   _JsonSequenceSerializer(this._context, this._elementCodec);
 
   @override
   void element(V value) {
+    var serialized = false;
     Object? encodedValue;
-    void sink(Object value) => encodedValue = value;
 
-    _context._pushSink(sink);
+    _context._pushSink((jsonValue) {
+      serialized = true;
+      encodedValue = jsonValue;
+    });
     _elementCodec.encode(_context, value);
     _context._popSink();
 
-    if (encodedValue == null) throw JsonEncodeError("No value was serialized");
-    _result.add(encodedValue!);
+    if (!serialized) throw JsonEncodeError("No value was serialized");
+    _result.add(encodedValue);
   }
 
   @override

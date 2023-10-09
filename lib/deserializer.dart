@@ -3,7 +3,8 @@ import 'dart:typed_data';
 import 'package:codec/codec.dart';
 
 abstract interface class Deserializer<T> {
-  void boolean();
+  bool boolean();
+  E? optional<E>(Codec<E> codec);
 
   int i8();
   int u8();
@@ -29,7 +30,7 @@ abstract interface class Deserializer<T> {
 }
 
 abstract interface class SelfDescribingDeserializer<T> extends Deserializer<T> {
-  Object any();
+  Object? any();
 }
 
 abstract interface class SequenceDeserializer<E> {

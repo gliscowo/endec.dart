@@ -11,7 +11,7 @@ T fromJson<T>(Codec<T> codec, Object json) {
   return codec.decode(deserializer);
 }
 
-class JsonDeserializer implements SelfDescribingDeserializer<Object> {
+class JsonDeserializer implements SelfDescribingDeserializer<Object?> {
   final Queue<JsonSource> _sources = Queue();
   final Object _serialized;
 
@@ -22,10 +22,12 @@ class JsonDeserializer implements SelfDescribingDeserializer<Object> {
   T _getObject<T>() => _sources.last() as T;
 
   @override
-  bool boolean() => _getObject();
+  Object? any() => _getObject();
 
   @override
-  Object any() => _getObject();
+  bool boolean() => _getObject();
+  @override
+  E? optional<E>(Codec<E> codec) => _getObject() != null ? codec.decode(this) : null;
 
   @override
   int i8() => _getObject();

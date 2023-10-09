@@ -1,5 +1,5 @@
 import 'package:codec/codec.dart';
-import 'package:codec/json_deserializer.dart';
+import 'package:codec/json/json_deserializer.dart';
 import 'package:codec/struct_codec.dart';
 
 // void main(List<String> args) {
@@ -38,7 +38,7 @@ class MyEpicStruct {
     Codec.string.field("a_field", (struct) => struct.aField),
     Codec.int.field("another_field", (struct) => struct.anotherField),
     Codec.double.listOf().mapOf().optionalField("map_field", {}, (struct) => struct.mapField),
-    MyEpicStruct._,
+    MyEpicStruct.new,
   );
 
   final String aField;
@@ -46,7 +46,6 @@ class MyEpicStruct {
   final Map<String, List<double>> mapField;
 
   MyEpicStruct(this.aField, this.anotherField, this.mapField);
-  MyEpicStruct._(this.aField, this.anotherField, this.mapField);
 
   @override
   String toString() => "aField: $aField\nanotherField: $anotherField\nmapField: $mapField";

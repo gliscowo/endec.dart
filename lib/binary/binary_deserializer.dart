@@ -11,7 +11,9 @@ class BinaryDeserializer implements Deserializer<Uint8List> {
   BinaryDeserializer(this._buffer);
 
   @override
-  void boolean() => u8() != 0;
+  bool boolean() => u8() != 0;
+  @override
+  E? optional<E>(Codec<E> codec) => boolean() ? codec.decode(this) : null;
 
   @override
   int i8() => _read((idx, _) => _buffer.getInt8(idx), 1);

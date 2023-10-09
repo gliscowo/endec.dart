@@ -5,11 +5,23 @@ import 'package:codec/codec.dart';
 import 'package:codec/serializer.dart';
 
 class BinarySerializer implements Serializer<Uint8List> {
+  @override
+  final bool selfDescribing = false;
+
   ByteData _buffer = ByteData(2048);
   int _cursor = 0;
 
   @override
   void boolean(bool value) => u8(value ? 1 : 0);
+  @override
+  void optional<E>(Codec<E> codec, E? value) {
+    if (value != null) {
+      boolean(true);
+      codec.encode(this, value);
+    } else {
+      boolean(false);
+    }
+  }
 
   @override
   void i8(int value) => _write((idx, value, _) => _buffer.setInt8(idx, value), value, 1);
