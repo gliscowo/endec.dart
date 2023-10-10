@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:codec/codec.dart';
-import 'package:codec/serializer.dart';
+import '../codec.dart';
+import '../serializer.dart';
 
 Uint8List toBinary<T>(Codec<T> codec, T value) {
   final serializer = BinarySerializer();

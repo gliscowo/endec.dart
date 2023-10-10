@@ -1,4 +1,4 @@
-import 'package:codec/codec.dart';
+import 'codec.dart';
 
 extension Field<F> on Codec<F> {
   StructField<S, F> field<S>(String name, F Function(S struct) getter, {F? defaultValue}) =>

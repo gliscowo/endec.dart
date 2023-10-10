@@ -1,8 +1,8 @@
 import 'dart:collection';
 import 'dart:typed_data';
 
-import 'package:codec/codec.dart';
-import 'package:codec/serializer.dart';
+import '../codec.dart';
+import '../serializer.dart';
 
 Object toJson<T>(Codec<T> codec, T value) {
   final serializer = JsonSerializer();

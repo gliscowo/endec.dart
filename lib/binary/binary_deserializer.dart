@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:codec/codec.dart';
-import 'package:codec/deserializer.dart';
+import '../codec.dart';
+import '../deserializer.dart';
 
 T fromBinary<T>(Codec<T> codec, Uint8List encoded) => codec.decode(BinaryDeserializer(ByteData.view(encoded.buffer)));
 

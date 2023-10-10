@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:codec/codec.dart';
+import 'codec.dart';
 
 abstract interface class Deserializer<T> {
   bool boolean();

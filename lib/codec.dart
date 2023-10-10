@@ -1,5 +1,5 @@
-import 'package:codec/deserializer.dart';
-import 'package:codec/serializer.dart';
+import 'deserializer.dart';
+import 'serializer.dart';
 
 typedef Int = int;
 typedef Double = double;
