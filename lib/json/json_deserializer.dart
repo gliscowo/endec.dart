@@ -1,15 +1,15 @@
 import 'dart:collection';
 import 'dart:typed_data';
 
-import 'package:codec/codec.dart';
-import 'package:codec/deserializer.dart';
-
-typedef JsonSource = Object Function();
+import '../codec.dart';
+import '../deserializer.dart';
 
 T fromJson<T>(Codec<T> codec, Object json) {
   final deserializer = JsonDeserializer(json);
   return codec.decode(deserializer);
 }
+
+typedef JsonSource = Object Function();
 
 class JsonDeserializer implements SelfDescribingDeserializer<Object?> {
   final Queue<JsonSource> _sources = Queue();
@@ -72,7 +72,7 @@ class JsonDeserializer implements SelfDescribingDeserializer<Object?> {
   void _popSource() => _sources.removeLast();
 }
 
-class _JsonMapDeserializer<V> implements MapDeserializer<V>, NamedStructDeserializer {
+class _JsonMapDeserializer<V> implements MapDeserializer<V>, StructDeserializer {
   final JsonDeserializer _context;
   final Codec<V>? _valueCodec;
 
@@ -91,29 +91,29 @@ class _JsonMapDeserializer<V> implements MapDeserializer<V>, NamedStructDeserial
   bool moveNext() => _entries.moveNext();
 
   @override
-  (String, V) entry() => _kvPair(_valueCodec!, false);
-  @override
-  F field<F>(Codec<F> codec) => _kvPair(codec, true).$2;
+  (String, V) entry() {
+    _context._pushSource(() => _entries.current.value);
+    final decoded = _valueCodec!.decode(_context);
+    _context._popSource();
+
+    return (_entries.current.key, decoded);
+  }
 
   @override
-  F? namedField<F>(String name, Codec<F> codec) {
-    if (!_map.containsKey(name)) return null;
+  F field<F>(String name, Codec<F> codec, {F? defaultValue}) {
+    if (!_map.containsKey(name)) {
+      if (defaultValue == null) {
+        throw JsonDecodeError("Field $name was missing from serialized data, but no default ");
+      }
 
-    _context._pushSource(() => _map[name]);
+      return defaultValue;
+    }
+
+    _context._pushSource(() => _map[name]!);
     final decoded = codec.decode(_context);
     _context._popSource();
 
     return decoded;
-  }
-
-  (String, T) _kvPair<T>(Codec<T> codec, bool move) {
-    if (move) _entries.moveNext();
-
-    _context._pushSource(() => _entries.current.value);
-    final decoded = codec.decode(_context);
-    _context._popSource();
-
-    return (_entries.current.key, decoded);
   }
 }
 
@@ -135,4 +135,12 @@ class _JsonSequenceDeserializer<V> implements SequenceDeserializer<V> {
 
     return decoded;
   }
+}
+
+class JsonDecodeError extends Error {
+  final String message;
+  JsonDecodeError(this.message);
+
+  @override
+  String toString() => "JSON decoding failed: $message";
 }

@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'package:codec/codec.dart';
 import 'package:codec/deserializer.dart';
 
+T fromBinary<T>(Codec<T> codec, Uint8List encoded) => codec.decode(BinaryDeserializer(ByteData.view(encoded.buffer)));
+
 class BinaryDeserializer implements Deserializer<Uint8List> {
   final ByteData _buffer;
   int _cursor = 0;
@@ -108,5 +110,5 @@ class _BinaryStructDeserializer implements StructDeserializer {
   _BinaryStructDeserializer(this._context);
 
   @override
-  F field<F>(Codec<F> codec) => codec.decode(_context);
+  F field<F>(String name, Codec<F> codec, {F? defaultValue}) => codec.decode(_context);
 }

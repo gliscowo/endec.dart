@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'package:codec/codec.dart';
-import 'package:codec/deserializer.dart';
-import 'package:codec/serializer.dart';
+import '../codec.dart';
+import '../deserializer.dart';
+import '../serializer.dart';
 
 const jsonCodec = JsonCodec._();
 

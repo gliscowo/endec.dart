@@ -4,6 +4,13 @@ import 'dart:typed_data';
 import 'package:codec/codec.dart';
 import 'package:codec/serializer.dart';
 
+Uint8List toBinary<T>(Codec<T> codec, T value) {
+  final serializer = BinarySerializer();
+  codec.encode(serializer, value);
+
+  return serializer.result;
+}
+
 class BinarySerializer implements Serializer<Uint8List> {
   @override
   final bool selfDescribing = false;

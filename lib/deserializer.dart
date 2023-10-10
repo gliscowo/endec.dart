@@ -44,9 +44,5 @@ abstract interface class MapDeserializer<V> {
 }
 
 abstract interface class StructDeserializer {
-  F field<F>(Codec<F> codec);
-}
-
-abstract interface class NamedStructDeserializer extends StructDeserializer {
-  F? namedField<F>(String name, Codec<F> codec);
+  F field<F>(String name, Codec<F> codec, {F? defaultValue});
 }

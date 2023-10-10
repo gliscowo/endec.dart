@@ -29,7 +29,7 @@ void main() {
     );
 
     var serialized = toJson(
-      codec.named,
+      codec,
       _Struct(
         "an epic field value",
         {"a": "bruh", "b": "nested field value, epic"},
@@ -39,7 +39,7 @@ void main() {
     );
     print(serialized);
 
-    var decoded = fromJson(codec.named, serialized);
+    var decoded = fromJson(codec, serialized);
     print("Deserialized: ${decoded.aField}, ${decoded.aNestedField}, ${decoded.listMoment}, ${decoded.anotherField}");
   });
 
