@@ -234,12 +234,12 @@ final class NbtList extends NbtElement<List<NbtElement>> {
 
   @override
   void stringify(SnbtWriter writer) {
-    writer.openBlock('[');
+    writer.startBlock('[', ']');
     for (final (idx, element) in _value.indexed) {
       element.stringify(writer);
       if (idx < _value.length - 1) writer.writeln(",");
     }
-    writer.closeBlock(']');
+    writer.endBlock();
   }
 }
 
@@ -275,7 +275,7 @@ final class NbtCompound extends NbtElement<Map<String, NbtElement>> {
 
   @override
   void stringify(SnbtWriter writer) {
-    writer.openBlock('{');
+    writer.startBlock('{', '}');
 
     for (final (idx, MapEntry(:key, :value)) in _value.entries.indexed) {
       writer.write(_safeKeyRegex.hasMatch(key) ? "$key: " : '"${writer.escape(key)}": ');
@@ -284,6 +284,6 @@ final class NbtCompound extends NbtElement<Map<String, NbtElement>> {
       if (idx < _value.length - 1) writer.writeln(",");
     }
 
-    writer.closeBlock('}');
+    writer.endBlock();
   }
 }

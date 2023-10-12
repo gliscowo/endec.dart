@@ -20,11 +20,8 @@ void main(List<String> args) {
         },
       ));
 
-  var snbt = SnbtWriter();
-  encoded.stringify(snbt);
-
   File("encode_struct.nbt").writeAsBytesSync(nbtToBinary(encoded as NbtCompound));
-  print(snbt.toString());
+  print(nbtToSnbt(encoded));
 
   var deserialized = fromNbt(MyEpicStruct.codec, encoded);
   print(deserialized);
