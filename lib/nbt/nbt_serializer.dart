@@ -1,13 +1,13 @@
 import 'dart:collection';
 import 'dart:typed_data';
 
-import '../codec.dart';
+import '../endec.dart';
 import '../serializer.dart';
 import 'nbt_types.dart';
 
-NbtElement toNbt<T>(Codec<T> codec, T value) {
+NbtElement toNbt<T>(Endec<T> endec, T value) {
   final serializer = NbtSerializer();
-  codec.encode(serializer, value);
+  endec.encode(serializer, value);
   return serializer.result;
 }
 
@@ -29,20 +29,11 @@ class NbtSerializer implements Serializer<NbtElement> {
   @override
   void boolean(bool value) => _sink(NbtByte(value ? 1 : 0));
   @override
-  void optional<E>(Codec<E> codec, E? value) {
-    var compound = <String, NbtElement>{"present": NbtByte(value != null ? 1 : 0)};
-
-    if (value != null) {
-      NbtElement? encoded;
-      _pushSink((nbtValue) => encoded = nbtValue);
-      codec.encode(this, value);
-      _popSink();
-
-      if (encoded == null) throw NbtEncodeError("Codec for present optional value encoded nothing");
-      compound["value"] = encoded!;
-    }
-
-    _sink(NbtCompound(compound));
+  void optional<E>(Endec<E> endec, E? value) {
+    final state = struct();
+    state.field("present", Endec.bool, value != null);
+    if (value != null) state.field("value", endec, value);
+    state.end();
   }
 
   @override
@@ -76,9 +67,9 @@ class NbtSerializer implements Serializer<NbtElement> {
   void bytes(Uint8List bytes) => _sink(NbtByteArray(bytes));
 
   @override
-  SequenceSerializer<E> sequence<E>(Codec<E> elementCodec, int length) => _NbtSequenceSerializer(this, elementCodec);
+  SequenceSerializer<E> sequence<E>(Endec<E> elementEndec, int length) => _NbtSequenceSerializer(this, elementEndec);
   @override
-  MapSerializer<V> map<V>(Codec<V> valueCodec, int length) => _NbtMapSerializer.map(this, valueCodec);
+  MapSerializer<V> map<V>(Endec<V> valueEndec, int length) => _NbtMapSerializer.map(this, valueEndec);
   @override
   StructSerializer struct() => _NbtMapSerializer.struct(this);
 
@@ -91,26 +82,26 @@ class NbtSerializer implements Serializer<NbtElement> {
 
 class _NbtMapSerializer<V> implements MapSerializer<V>, StructSerializer {
   final NbtSerializer _context;
-  final Codec<V>? _valueCodec;
+  final Endec<V>? _valueEndec;
   final Map<String, NbtElement> _result = {};
 
-  _NbtMapSerializer.map(this._context, Codec<V> valueCodec) : _valueCodec = valueCodec;
-  _NbtMapSerializer.struct(this._context) : _valueCodec = null;
+  _NbtMapSerializer.map(this._context, Endec<V> valueEndec) : _valueEndec = valueEndec;
+  _NbtMapSerializer.struct(this._context) : _valueEndec = null;
 
   @override
-  void entry(String key, V value) => _kvPair(key, _valueCodec!, value);
+  void entry(String key, V value) => _kvPair(key, _valueEndec!, value);
   @override
-  void field<F, _V extends F>(String key, Codec<F> codec, _V value) => _kvPair(key, codec, value);
+  void field<F, _V extends F>(String key, Endec<F> endec, _V value) => _kvPair(key, endec, value);
 
-  void _kvPair<T>(String key, Codec<T> codec, T value) {
+  void _kvPair<T>(String key, Endec<T> endec, T value) {
     NbtElement? encodedValue;
     void sink(NbtElement nbtValue) => encodedValue = nbtValue;
 
     _context._pushSink(sink);
-    codec.encode(_context, value);
+    endec.encode(_context, value);
     _context._popSink();
 
-    if (encodedValue == null) throw NbtEncodeError("Codec for NBT Compound value encoded nothing");
+    if (encodedValue == null) throw NbtEncodeError("Endec for NBT Compound value encoded nothing");
     _result[key] = encodedValue!;
   }
 
@@ -120,10 +111,10 @@ class _NbtMapSerializer<V> implements MapSerializer<V>, StructSerializer {
 
 class _NbtSequenceSerializer<V> implements SequenceSerializer<V> {
   final NbtSerializer _context;
-  final Codec<V> _elementCodec;
+  final Endec<V> _elementEndec;
   final List<NbtElement> _result = [];
 
-  _NbtSequenceSerializer(this._context, this._elementCodec);
+  _NbtSequenceSerializer(this._context, this._elementEndec);
 
   @override
   void element(V value) {
@@ -131,7 +122,7 @@ class _NbtSequenceSerializer<V> implements SequenceSerializer<V> {
     void sink(NbtElement nbtValue) => encodedValue = nbtValue;
 
     _context._pushSink(sink);
-    _elementCodec.encode(_context, value);
+    _elementEndec.encode(_context, value);
     _context._popSink();
 
     if (encodedValue == null) throw NbtEncodeError("No value was serialized");

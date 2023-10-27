@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import '../codec.dart';
+import '../endec.dart';
 import '../deserializer.dart';
 
-T fromBinary<T>(Codec<T> codec, Uint8List encoded) => codec.decode(BinaryDeserializer(ByteData.view(encoded.buffer)));
+T fromBinary<T>(Endec<T> endec, Uint8List encoded) => endec.decode(BinaryDeserializer(ByteData.view(encoded.buffer)));
 
 class BinaryDeserializer implements Deserializer<Uint8List> {
   final ByteData _buffer;
@@ -15,7 +15,7 @@ class BinaryDeserializer implements Deserializer<Uint8List> {
   @override
   bool boolean() => u8() != 0;
   @override
-  E? optional<E>(Codec<E> codec) => boolean() ? codec.decode(this) : null;
+  E? optional<E>(Endec<E> endec) => boolean() ? endec.decode(this) : null;
 
   @override
   int i8() => _read((idx, _) => _buffer.getInt8(idx), 1);
@@ -64,10 +64,10 @@ class BinaryDeserializer implements Deserializer<Uint8List> {
   }
 
   @override
-  SequenceDeserializer<E> sequence<E>(Codec<E> elementCodec) => _BinarySequenceDeserializer(this, elementCodec);
+  SequenceDeserializer<E> sequence<E>(Endec<E> elementEndec) => _BinarySequenceDeserializer(this, elementEndec);
 
   @override
-  MapDeserializer<V> map<V>(Codec<V> valueCodec) => _BinaryMapDeserializer(this, valueCodec);
+  MapDeserializer<V> map<V>(Endec<V> valueEndec) => _BinaryMapDeserializer(this, valueEndec);
 
   @override
   StructDeserializer struct() => _BinaryStructDeserializer(this);
@@ -75,34 +75,34 @@ class BinaryDeserializer implements Deserializer<Uint8List> {
 
 class _BinarySequenceDeserializer<V> implements SequenceDeserializer<V> {
   final BinaryDeserializer _context;
-  final Codec<V> _elementCodec;
+  final Endec<V> _elementEndec;
 
   final int _length;
   int _read = 0;
 
-  _BinarySequenceDeserializer(this._context, this._elementCodec) : _length = _context.i32();
+  _BinarySequenceDeserializer(this._context, this._elementEndec) : _length = _context.i32();
 
   @override
   bool moveNext() => ++_read <= _length;
 
   @override
-  V element() => _elementCodec.decode(_context);
+  V element() => _elementEndec.decode(_context);
 }
 
 class _BinaryMapDeserializer<V> implements MapDeserializer<V> {
   final BinaryDeserializer _context;
-  final Codec<V> _valueCodec;
+  final Endec<V> _valueEndec;
 
   final int _length;
   int _read = 0;
 
-  _BinaryMapDeserializer(this._context, this._valueCodec) : _length = _context.i32();
+  _BinaryMapDeserializer(this._context, this._valueEndec) : _length = _context.i32();
 
   @override
   bool moveNext() => ++_read <= _length;
 
   @override
-  (String, V) entry() => (_context.string(), _valueCodec.decode(_context));
+  (String, V) entry() => (_context.string(), _valueEndec.decode(_context));
 }
 
 class _BinaryStructDeserializer implements StructDeserializer {
@@ -110,5 +110,5 @@ class _BinaryStructDeserializer implements StructDeserializer {
   _BinaryStructDeserializer(this._context);
 
   @override
-  F field<F>(String name, Codec<F> codec, {F? defaultValue}) => codec.decode(_context);
+  F field<F>(String name, Endec<F> endec, {F? defaultValue}) => endec.decode(_context);
 }

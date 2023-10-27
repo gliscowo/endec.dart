@@ -1,13 +1,13 @@
 import 'dart:convert';
 
-import '../codec.dart';
+import '../endec.dart';
 import '../deserializer.dart';
 import '../serializer.dart';
 
-const jsonCodec = JsonCodec._();
+const jsonEndec = JsonEndec._();
 
-class JsonCodec with Codec<Object?> {
-  const JsonCodec._();
+class JsonEndec with Endec<Object?> {
+  const JsonEndec._();
 
   @override
   void encode<S>(Serializer<S> serializer, Object? value) {

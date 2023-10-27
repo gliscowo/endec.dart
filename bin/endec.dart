@@ -1,16 +1,16 @@
 import 'dart:io';
 
-import 'package:codec/codec.dart';
-import 'package:codec/nbt/nbt_deserializer.dart';
-import 'package:codec/nbt/nbt_io.dart';
-import 'package:codec/nbt/nbt_serializer.dart';
-import 'package:codec/nbt/nbt_types.dart';
-import 'package:codec/nbt/snbt.dart';
-import 'package:codec/struct_codec.dart';
+import 'package:endec/endec.dart';
+import 'package:endec/nbt/nbt_deserializer.dart';
+import 'package:endec/nbt/nbt_io.dart';
+import 'package:endec/nbt/nbt_serializer.dart';
+import 'package:endec/nbt/nbt_types.dart';
+import 'package:endec/nbt/snbt.dart';
+import 'package:endec/struct_endec.dart';
 
 void main(List<String> args) {
   var encoded = toNbt(
-      MyEpicStruct.codec,
+      MyEpicStruct.endec,
       MyEpicStruct(
         "a",
         5,
@@ -23,7 +23,7 @@ void main(List<String> args) {
   File("encode_struct.nbt").writeAsBytesSync(nbtToBinary(encoded as NbtCompound));
   print(nbtToSnbt(encoded));
 
-  var deserialized = fromNbt(MyEpicStruct.codec, encoded);
+  var deserialized = fromNbt(MyEpicStruct.endec, encoded);
   print(deserialized);
 }
 
@@ -34,15 +34,15 @@ void main(List<String> args) {
 //     "another_field": 7,
 //   };
 
-//   var decoded = fromJson(MyEpicStruct.codec, json);
+//   var decoded = fromJson(MyEpicStruct.endec, json);
 //   print(decoded);
 // }
 
 class MyEpicStruct {
-  static final Codec<MyEpicStruct> codec = structCodec<MyEpicStruct>().codec3(
-    Codec.string.field("a_field", (struct) => struct.aField),
-    Codec.int.field("another_field", (struct) => struct.anotherField),
-    Codec.double.listOf().mapOf().field("map_field", defaultValue: {}, (struct) => struct.mapField),
+  static final Endec<MyEpicStruct> endec = structEndec<MyEpicStruct>().endec3(
+    Endec.string.field("a_field", (struct) => struct.aField),
+    Endec.int.field("another_field", (struct) => struct.anotherField),
+    Endec.double.listOf().mapOf().field("map_field", defaultValue: {}, (struct) => struct.mapField),
     MyEpicStruct.new,
   );
 

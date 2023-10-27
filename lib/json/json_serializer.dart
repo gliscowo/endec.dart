@@ -1,12 +1,12 @@
 import 'dart:collection';
 import 'dart:typed_data';
 
-import '../codec.dart';
+import '../endec.dart';
 import '../serializer.dart';
 
-Object toJson<T>(Codec<T> codec, T value) {
+Object toJson<T>(Endec<T> endec, T value) {
   final serializer = JsonSerializer();
-  codec.encode(serializer, value);
+  endec.encode(serializer, value);
   return serializer.result;
 }
 
@@ -28,9 +28,9 @@ class JsonSerializer implements Serializer<Object> {
   @override
   void boolean(bool value) => _sink(value);
   @override
-  void optional<E>(Codec<E> codec, E? value) {
+  void optional<E>(Endec<E> endec, E? value) {
     if (value != null) {
-      codec.encode(this, value);
+      endec.encode(this, value);
     } else {
       _sink(null);
     }
@@ -67,9 +67,9 @@ class JsonSerializer implements Serializer<Object> {
   void bytes(Uint8List bytes) => _sink(bytes);
 
   @override
-  SequenceSerializer<E> sequence<E>(Codec<E> elementCodec, int length) => _JsonSequenceSerializer(this, elementCodec);
+  SequenceSerializer<E> sequence<E>(Endec<E> elementEndec, int length) => _JsonSequenceSerializer(this, elementEndec);
   @override
-  MapSerializer<V> map<V>(Codec<V> valueCodec, int length) => _JsonMapSerializer.map(this, valueCodec);
+  MapSerializer<V> map<V>(Endec<V> valueEndec, int length) => _JsonMapSerializer.map(this, valueEndec);
   @override
   StructSerializer struct() => _JsonMapSerializer.struct(this);
 
@@ -82,18 +82,18 @@ class JsonSerializer implements Serializer<Object> {
 
 class _JsonMapSerializer<V> implements MapSerializer<V>, StructSerializer {
   final JsonSerializer _context;
-  final Codec<V>? _valueCodec;
+  final Endec<V>? _valueEndec;
   final Map<String, Object?> _result = {};
 
-  _JsonMapSerializer.map(this._context, Codec<V> valueCodec) : _valueCodec = valueCodec;
-  _JsonMapSerializer.struct(this._context) : _valueCodec = null;
+  _JsonMapSerializer.map(this._context, Endec<V> valueEndec) : _valueEndec = valueEndec;
+  _JsonMapSerializer.struct(this._context) : _valueEndec = null;
 
   @override
-  void entry(String key, V value) => _kvPair(key, _valueCodec!, value);
+  void entry(String key, V value) => _kvPair(key, _valueEndec!, value);
   @override
-  void field<F, _V extends F>(String key, Codec<F> codec, _V value) => _kvPair(key, codec, value);
+  void field<F, _V extends F>(String key, Endec<F> endec, _V value) => _kvPair(key, endec, value);
 
-  void _kvPair<T>(String key, Codec<T> codec, T value) {
+  void _kvPair<T>(String key, Endec<T> endec, T value) {
     var serialized = false;
     Object? encodedValue;
 
@@ -101,7 +101,7 @@ class _JsonMapSerializer<V> implements MapSerializer<V>, StructSerializer {
       serialized = true;
       encodedValue = jsonValue;
     });
-    codec.encode(_context, value);
+    endec.encode(_context, value);
     _context._popSink();
 
     if (!serialized) throw JsonEncodeError("No field was serialized");
@@ -114,10 +114,10 @@ class _JsonMapSerializer<V> implements MapSerializer<V>, StructSerializer {
 
 class _JsonSequenceSerializer<V> implements SequenceSerializer<V> {
   final JsonSerializer _context;
-  final Codec<V> _elementCodec;
+  final Endec<V> _elementEndec;
   final List<Object?> _result = [];
 
-  _JsonSequenceSerializer(this._context, this._elementCodec);
+  _JsonSequenceSerializer(this._context, this._elementEndec);
 
   @override
   void element(V value) {
@@ -128,7 +128,7 @@ class _JsonSequenceSerializer<V> implements SequenceSerializer<V> {
       serialized = true;
       encodedValue = jsonValue;
     });
-    _elementCodec.encode(_context, value);
+    _elementEndec.encode(_context, value);
     _context._popSink();
 
     if (!serialized) throw JsonEncodeError("No value was serialized");

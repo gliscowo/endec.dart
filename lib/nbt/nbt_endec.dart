@@ -1,15 +1,15 @@
 import 'dart:typed_data';
 
-import '../codec.dart';
+import '../endec.dart';
 import '../deserializer.dart';
 import '../serializer.dart';
 import 'nbt_io.dart';
 import 'nbt_types.dart';
 
-const nbtCodec = NbtCodec._();
+const nbtEndec = NbtEndec._();
 
-class NbtCodec with Codec<NbtElement> {
-  const NbtCodec._();
+class NbtEndec with Endec<NbtElement> {
+  const NbtEndec._();
 
   @override
   void encode<S>(Serializer<S> serializer, NbtElement value) {
@@ -30,9 +30,9 @@ class NbtCodec with Codec<NbtElement> {
         case NbtByteArray byteArray:
           serializer.bytes(byteArray.value);
         case NbtIntArray intArray:
-          Codec.int.listOf().encode(serializer, intArray.value);
+          Endec.int.listOf().encode(serializer, intArray.value);
         case NbtLongArray longArray:
-          Codec.int.listOf().encode(serializer, longArray.value);
+          Endec.int.listOf().encode(serializer, longArray.value);
         case NbtString string:
           serializer.string(string.value);
         case NbtList list:

@@ -1,10 +1,10 @@
 import 'dart:typed_data';
 
-import 'codec.dart';
+import 'endec.dart';
 
 abstract interface class Deserializer<T> {
   bool boolean();
-  E? optional<E>(Codec<E> codec);
+  E? optional<E>(Endec<E> endec);
 
   int i8();
   int u8();
@@ -24,8 +24,8 @@ abstract interface class Deserializer<T> {
   String string();
   Uint8List bytes();
 
-  SequenceDeserializer<E> sequence<E>(Codec<E> elementCodec);
-  MapDeserializer<V> map<V>(Codec<V> valueCodec);
+  SequenceDeserializer<E> sequence<E>(Endec<E> elementEndec);
+  MapDeserializer<V> map<V>(Endec<V> valueEndec);
   StructDeserializer struct();
 }
 
@@ -44,5 +44,5 @@ abstract interface class MapDeserializer<V> {
 }
 
 abstract interface class StructDeserializer {
-  F field<F>(String name, Codec<F> codec, {F? defaultValue});
+  F field<F>(String name, Endec<F> endec, {F? defaultValue});
 }

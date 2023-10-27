@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import '../codec.dart';
+import '../endec.dart';
 import '../serializer.dart';
 
-Uint8List toBinary<T>(Codec<T> codec, T value) {
+Uint8List toBinary<T>(Endec<T> endec, T value) {
   final serializer = BinarySerializer();
-  codec.encode(serializer, value);
+  endec.encode(serializer, value);
 
   return serializer.result;
 }
@@ -21,10 +21,10 @@ class BinarySerializer implements Serializer<Uint8List> {
   @override
   void boolean(bool value) => u8(value ? 1 : 0);
   @override
-  void optional<E>(Codec<E> codec, E? value) {
+  void optional<E>(Endec<E> endec, E? value) {
     if (value != null) {
       boolean(true);
-      codec.encode(this, value);
+      endec.encode(this, value);
     } else {
       boolean(false);
     }
@@ -77,15 +77,15 @@ class BinarySerializer implements Serializer<Uint8List> {
   }
 
   @override
-  SequenceSerializer<E> sequence<E>(Codec<E> elementCodec, int length) {
+  SequenceSerializer<E> sequence<E>(Endec<E> elementEndec, int length) {
     i32(length);
-    return _BinarySequenceSerializer(this, elementCodec);
+    return _BinarySequenceSerializer(this, elementEndec);
   }
 
   @override
-  MapSerializer<V> map<V>(Codec<V> valueCodec, int length) {
+  MapSerializer<V> map<V>(Endec<V> valueEndec, int length) {
     i32(length);
-    return _BinaryMapSerializer(this, valueCodec);
+    return _BinaryMapSerializer(this, valueEndec);
   }
 
   @override
@@ -106,24 +106,24 @@ class BinarySerializer implements Serializer<Uint8List> {
 
 class _BinarySequenceSerializer<V> implements SequenceSerializer<V> {
   final BinarySerializer _context;
-  final Codec<V> _elementCodec;
-  _BinarySequenceSerializer(this._context, this._elementCodec);
+  final Endec<V> _elementEndec;
+  _BinarySequenceSerializer(this._context, this._elementEndec);
 
   @override
-  void element(V element) => _elementCodec.encode(_context, element);
+  void element(V element) => _elementEndec.encode(_context, element);
   @override
   void end() {}
 }
 
 class _BinaryMapSerializer<V> implements MapSerializer<V> {
   final BinarySerializer _context;
-  final Codec<V> _valueCodec;
-  _BinaryMapSerializer(this._context, this._valueCodec);
+  final Endec<V> _valueEndec;
+  _BinaryMapSerializer(this._context, this._valueEndec);
 
   @override
   void entry(String key, V element) {
     _context.string(key);
-    _valueCodec.encode(_context, element);
+    _valueEndec.encode(_context, element);
   }
 
   @override
@@ -135,7 +135,7 @@ class _BinaryStructSerializer implements StructSerializer {
   _BinaryStructSerializer(this._context);
 
   @override
-  void field<F, V extends F>(String name, Codec<F> codec, V value) => codec.encode(_context, value);
+  void field<F, V extends F>(String name, Endec<F> endec, V value) => endec.encode(_context, value);
 
   @override
   void end() {}

@@ -1,12 +1,12 @@
 import 'dart:collection';
 import 'dart:typed_data';
 
-import '../codec.dart';
+import '../endec.dart';
 import '../deserializer.dart';
 
-T fromJson<T>(Codec<T> codec, Object json) {
+T fromJson<T>(Endec<T> endec, Object json) {
   final deserializer = JsonDeserializer(json);
-  return codec.decode(deserializer);
+  return endec.decode(deserializer);
 }
 
 typedef JsonSource = Object Function();
@@ -27,7 +27,7 @@ class JsonDeserializer implements SelfDescribingDeserializer<Object?> {
   @override
   bool boolean() => _getObject();
   @override
-  E? optional<E>(Codec<E> codec) => _getObject() != null ? codec.decode(this) : null;
+  E? optional<E>(Endec<E> endec) => _getObject() != null ? endec.decode(this) : null;
 
   @override
   int i8() => _getObject();
@@ -60,11 +60,11 @@ class JsonDeserializer implements SelfDescribingDeserializer<Object?> {
   Uint8List bytes() => Uint8List.fromList(_getObject<List<dynamic>>().cast<int>());
 
   @override
-  SequenceDeserializer<E> sequence<E>(Codec<E> elementCodec) =>
-      _JsonSequenceDeserializer(this, elementCodec, _getObject<List<dynamic>>());
+  SequenceDeserializer<E> sequence<E>(Endec<E> elementEndec) =>
+      _JsonSequenceDeserializer(this, elementEndec, _getObject<List<dynamic>>());
   @override
-  MapDeserializer<V> map<V>(Codec<V> valueCodec) =>
-      _JsonMapDeserializer.map(this, valueCodec, _getObject<Map<String, dynamic>>());
+  MapDeserializer<V> map<V>(Endec<V> valueEndec) =>
+      _JsonMapDeserializer.map(this, valueEndec, _getObject<Map<String, dynamic>>());
   @override
   StructDeserializer struct() => _JsonMapDeserializer.struct(this, _getObject<Map<String, dynamic>>());
 
@@ -74,17 +74,17 @@ class JsonDeserializer implements SelfDescribingDeserializer<Object?> {
 
 class _JsonMapDeserializer<V> implements MapDeserializer<V>, StructDeserializer {
   final JsonDeserializer _context;
-  final Codec<V>? _valueCodec;
+  final Endec<V>? _valueEndec;
 
   final Map<String, dynamic> _map;
   final Iterator<MapEntry<String, dynamic>> _entries;
 
-  _JsonMapDeserializer.map(this._context, Codec<V> valueCodec, this._map)
-      : _valueCodec = valueCodec,
+  _JsonMapDeserializer.map(this._context, Endec<V> valueEndec, this._map)
+      : _valueEndec = valueEndec,
         _entries = _map.entries.iterator;
 
   _JsonMapDeserializer.struct(this._context, this._map)
-      : _valueCodec = null,
+      : _valueEndec = null,
         _entries = _map.entries.iterator;
 
   @override
@@ -93,14 +93,14 @@ class _JsonMapDeserializer<V> implements MapDeserializer<V>, StructDeserializer 
   @override
   (String, V) entry() {
     _context._pushSource(() => _entries.current.value);
-    final decoded = _valueCodec!.decode(_context);
+    final decoded = _valueEndec!.decode(_context);
     _context._popSource();
 
     return (_entries.current.key, decoded);
   }
 
   @override
-  F field<F>(String name, Codec<F> codec, {F? defaultValue}) {
+  F field<F>(String name, Endec<F> endec, {F? defaultValue}) {
     if (!_map.containsKey(name)) {
       if (defaultValue == null) {
         throw JsonDecodeError("Field $name was missing from serialized data, but no default ");
@@ -110,7 +110,7 @@ class _JsonMapDeserializer<V> implements MapDeserializer<V>, StructDeserializer 
     }
 
     _context._pushSource(() => _map[name]!);
-    final decoded = codec.decode(_context);
+    final decoded = endec.decode(_context);
     _context._popSource();
 
     return decoded;
@@ -119,10 +119,10 @@ class _JsonMapDeserializer<V> implements MapDeserializer<V>, StructDeserializer 
 
 class _JsonSequenceDeserializer<V> implements SequenceDeserializer<V> {
   final JsonDeserializer _context;
-  final Codec<V> _elementCodec;
+  final Endec<V> _elementEndec;
   final Iterator<dynamic> _entries;
 
-  _JsonSequenceDeserializer(this._context, this._elementCodec, List<dynamic> list) : _entries = list.iterator;
+  _JsonSequenceDeserializer(this._context, this._elementEndec, List<dynamic> list) : _entries = list.iterator;
 
   @override
   bool moveNext() => _entries.moveNext();
@@ -130,7 +130,7 @@ class _JsonSequenceDeserializer<V> implements SequenceDeserializer<V> {
   @override
   V element() {
     _context._pushSource(() => _entries.current);
-    final decoded = _elementCodec.decode(_context);
+    final decoded = _elementEndec.decode(_context);
     _context._popSource();
 
     return decoded;

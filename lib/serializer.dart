@@ -1,10 +1,10 @@
 import 'dart:typed_data';
 
-import 'codec.dart';
+import 'endec.dart';
 
 abstract interface class Serializer<T> {
   void boolean(bool value);
-  void optional<E>(Codec<E> codec, E? value);
+  void optional<E>(Endec<E> endec, E? value);
 
   void i8(int value);
   void u8(int value);
@@ -24,8 +24,8 @@ abstract interface class Serializer<T> {
   void string(String value);
   void bytes(Uint8List bytes);
 
-  SequenceSerializer<E> sequence<E>(Codec<E> elementCodec, int length);
-  MapSerializer<V> map<V>(Codec<V> valueCodec, int length);
+  SequenceSerializer<E> sequence<E>(Endec<E> elementEndec, int length);
+  MapSerializer<V> map<V>(Endec<V> valueEndec, int length);
   StructSerializer struct();
 
   T get result;
@@ -43,6 +43,6 @@ abstract interface class MapSerializer<V> {
 }
 
 abstract interface class StructSerializer {
-  void field<F, V extends F>(String name, Codec<F> codec, V value);
+  void field<F, V extends F>(String name, Endec<F> endec, V value);
   void end();
 }
