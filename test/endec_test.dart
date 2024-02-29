@@ -4,8 +4,8 @@ import 'dart:typed_data';
 import 'package:endec/binary/binary_deserializer.dart';
 import 'package:endec/binary/binary_serializer.dart';
 import 'package:endec/endec.dart';
-import 'package:endec/json/json_endec.dart';
 import 'package:endec/json/json_deserializer.dart';
+import 'package:endec/json/json_endec.dart';
 import 'package:endec/json/json_serializer.dart';
 import 'package:endec/struct_endec.dart';
 import 'package:test/test.dart';
@@ -20,7 +20,7 @@ void main() {
   });
 
   test('encode struct', () {
-    var endec = structEndec<_Struct>().endec4(
+    var endec = structEndec<_Struct>().with4Fields(
       Endec.string.field("a_field", (struct) => struct.aField),
       Endec.string.mapOf().field("a_nested_field", (struct) => struct.aNestedField),
       Endec.double.listOf().field("list_moment", (struct) => struct.listMoment),

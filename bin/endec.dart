@@ -39,7 +39,7 @@ void main(List<String> args) {
 // }
 
 class MyEpicStruct {
-  static final Endec<MyEpicStruct> endec = structEndec<MyEpicStruct>().endec3(
+  static final Endec<MyEpicStruct> endec = structEndec<MyEpicStruct>().with3Fields(
     Endec.string.field("a_field", (struct) => struct.aField),
     Endec.int.field("another_field", (struct) => struct.anotherField),
     Endec.double.listOf().mapOf().field("map_field", defaultValue: {}, (struct) => struct.mapField),

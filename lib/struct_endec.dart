@@ -5,7 +5,7 @@ extension Field<F> on Endec<F> {
       StructField(name, this, getter, defaultValue: defaultValue);
 }
 
-StructEndecBuilder<S> structEndec<S>() => StructEndecBuilder();
+StructEndecBuilder<S> structEndec<S>() => StructEndecBuilder._();
 
 class StructField<S, F> {
   final String name;
@@ -16,7 +16,9 @@ class StructField<S, F> {
 }
 
 class StructEndecBuilder<S> {
-  Endec<S> endec1<F1>(
+  StructEndecBuilder._();
+
+  Endec<S> with1Field<F1>(
     StructField<S, F1> f1,
     S Function(F1) constructor,
   ) =>
@@ -30,7 +32,7 @@ class StructEndecBuilder<S> {
         },
       );
 
-  Endec<S> endec2<F1, F2>(
+  Endec<S> with2Fields<F1, F2>(
     StructField<S, F1> f1,
     StructField<S, F2> f2,
     S Function(F1, F2) constructor,
@@ -49,7 +51,7 @@ class StructEndecBuilder<S> {
         },
       );
 
-  Endec<S> endec3<F1, F2, F3>(
+  Endec<S> with3Fields<F1, F2, F3>(
     StructField<S, F1> f1,
     StructField<S, F2> f2,
     StructField<S, F3> f3,
@@ -71,7 +73,7 @@ class StructEndecBuilder<S> {
         },
       );
 
-  Endec<S> endec4<F1, F2, F3, F4>(
+  Endec<S> with4Fields<F1, F2, F3, F4>(
     StructField<S, F1> f1,
     StructField<S, F2> f2,
     StructField<S, F3> f3,
@@ -96,7 +98,7 @@ class StructEndecBuilder<S> {
         },
       );
 
-  Endec<S> endec5<F1, F2, F3, F4, F5>(
+  Endec<S> with5Fields<F1, F2, F3, F4, F5>(
     StructField<S, F1> f1,
     StructField<S, F2> f2,
     StructField<S, F3> f3,
@@ -124,7 +126,7 @@ class StructEndecBuilder<S> {
         },
       );
 
-  Endec<S> endec6<F1, F2, F3, F4, F5, F6>(
+  Endec<S> with6Fields<F1, F2, F3, F4, F5, F6>(
     StructField<S, F1> f1,
     StructField<S, F2> f2,
     StructField<S, F3> f3,
@@ -155,7 +157,7 @@ class StructEndecBuilder<S> {
         },
       );
 
-  Endec<S> endec7<F1, F2, F3, F4, F5, F6, F7>(
+  Endec<S> with7Fields<F1, F2, F3, F4, F5, F6, F7>(
     StructField<S, F1> f1,
     StructField<S, F2> f2,
     StructField<S, F3> f3,
@@ -189,7 +191,7 @@ class StructEndecBuilder<S> {
         },
       );
 
-  Endec<S> endec8<F1, F2, F3, F4, F5, F6, F7, F8>(
+  Endec<S> with8Fields<F1, F2, F3, F4, F5, F6, F7, F8>(
     StructField<S, F1> f1,
     StructField<S, F2> f2,
     StructField<S, F3> f3,
@@ -226,7 +228,7 @@ class StructEndecBuilder<S> {
         },
       );
 
-  Endec<S> endec9<F1, F2, F3, F4, F5, F6, F7, F8, F9>(
+  Endec<S> with9Fields<F1, F2, F3, F4, F5, F6, F7, F8, F9>(
     StructField<S, F1> f1,
     StructField<S, F2> f2,
     StructField<S, F3> f3,
@@ -266,7 +268,7 @@ class StructEndecBuilder<S> {
         },
       );
 
-  Endec<S> endec10<F1, F2, F3, F4, F5, F6, F7, F8, F9, F10>(
+  Endec<S> with10Fields<F1, F2, F3, F4, F5, F6, F7, F8, F9, F10>(
     StructField<S, F1> f1,
     StructField<S, F2> f2,
     StructField<S, F3> f3,
@@ -309,7 +311,7 @@ class StructEndecBuilder<S> {
         },
       );
 
-  Endec<S> endec11<F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11>(
+  Endec<S> with11Fields<F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11>(
     StructField<S, F1> f1,
     StructField<S, F2> f2,
     StructField<S, F3> f3,
@@ -355,7 +357,7 @@ class StructEndecBuilder<S> {
         },
       );
 
-  Endec<S> endec12<F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12>(
+  Endec<S> with12Fields<F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12>(
     StructField<S, F1> f1,
     StructField<S, F2> f2,
     StructField<S, F3> f3,
@@ -404,7 +406,7 @@ class StructEndecBuilder<S> {
         },
       );
 
-  Endec<S> endec13<F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13>(
+  Endec<S> with13Fields<F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13>(
     StructField<S, F1> f1,
     StructField<S, F2> f2,
     StructField<S, F3> f3,
@@ -456,7 +458,7 @@ class StructEndecBuilder<S> {
         },
       );
 
-  Endec<S> endec14<F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14>(
+  Endec<S> with14Fields<F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14>(
     StructField<S, F1> f1,
     StructField<S, F2> f2,
     StructField<S, F3> f3,
@@ -511,7 +513,7 @@ class StructEndecBuilder<S> {
         },
       );
 
-  Endec<S> endec15<F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15>(
+  Endec<S> with15Fields<F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15>(
     StructField<S, F1> f1,
     StructField<S, F2> f2,
     StructField<S, F3> f3,
@@ -569,7 +571,7 @@ class StructEndecBuilder<S> {
         },
       );
 
-  Endec<S> endec16<F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16>(
+  Endec<S> with16Fields<F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16>(
     StructField<S, F1> f1,
     StructField<S, F2> f2,
     StructField<S, F3> f3,
