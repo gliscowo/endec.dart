@@ -1,5 +1,6 @@
 import 'deserializer.dart';
 import 'serializer.dart';
+import 'struct_endec.dart';
 
 typedef Int = int;
 typedef Double = double;
@@ -19,24 +20,32 @@ abstract mixin class Endec<T> {
       Endec.of((serializer, value) => serializer.string(value), (deserializer) => deserializer.string());
 
   factory Endec.of(Encoder<T> encoder, Decoder<T> decoder) => _SimpleEndec(encoder, decoder);
+  static Endec<Map<K, V>> map<K, V>(Endec<K> keyEndec, Endec<V> valueEndec) => structEndec<MapEntry<K, V>>()
+      .with2Fields(
+        keyEndec.field("k", (entry) => entry.key),
+        valueEndec.field("v", (entry) => entry.value),
+        MapEntry.new,
+      )
+      .listOf()
+      .xmap(Map.fromEntries, (map) => map.entries.toList());
 
   void encode<S>(Serializer<S> serializer, T value);
   T decode<S>(Deserializer<S> deserializer);
 
   Endec<List<T>> listOf() => _ListEndec(this);
-  Endec<Map<String, T>> mapOf() => _MapEndec(this);
+  Endec<Map<String, T>> mapOf() => _StringMapEndec(this);
   Endec<T?> optionalOf() => _OptionalEndec(this);
 
   Endec<U> xmap<U>(U Function(T self) to, T Function(U other) from) => _XmapEndec(this, to, from);
 }
 
 class _ListEndec<T> with Endec<List<T>> {
-  final Endec<T> elementEndec;
-  _ListEndec(this.elementEndec);
+  final Endec<T> _elementEndec;
+  _ListEndec(this._elementEndec);
 
   @override
   void encode<S>(Serializer<S> serializer, List<T> value) {
-    var state = serializer.sequence<T>(elementEndec, value.length);
+    var state = serializer.sequence<T>(_elementEndec, value.length);
     for (final element in value) {
       state.element(element);
     }
@@ -47,7 +56,7 @@ class _ListEndec<T> with Endec<List<T>> {
   List<T> decode<S>(Deserializer<S> deserializer) {
     final result = <T>[];
 
-    var state = deserializer.sequence(elementEndec);
+    var state = deserializer.sequence(_elementEndec);
     while (state.moveNext()) {
       result.add(state.element());
     }
@@ -56,13 +65,13 @@ class _ListEndec<T> with Endec<List<T>> {
   }
 }
 
-class _MapEndec<T> with Endec<Map<String, T>> {
-  final Endec<T> valueEndec;
-  _MapEndec(this.valueEndec);
+class _StringMapEndec<T> with Endec<Map<String, T>> {
+  final Endec<T> _valueEndec;
+  _StringMapEndec(this._valueEndec);
 
   @override
   void encode<S>(Serializer<S> serializer, Map<String, T> value) {
-    var state = serializer.map<T>(valueEndec, value.length);
+    var state = serializer.map<T>(_valueEndec, value.length);
     for (final MapEntry(:key, :value) in value.entries) {
       state.entry(key, value);
     }
@@ -73,7 +82,7 @@ class _MapEndec<T> with Endec<Map<String, T>> {
   Map<String, T> decode<S>(Deserializer<S> deserializer) {
     final result = <String, T>{};
 
-    var state = deserializer.map(valueEndec);
+    var state = deserializer.map(_valueEndec);
     while (state.moveNext()) {
       var (key, value) = state.entry();
       result[key] = value;
