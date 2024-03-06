@@ -1,7 +1,10 @@
 import 'dart:convert';
 
-import '../endec.dart';
+import 'package:endec/json/json_deserializer.dart';
+import 'package:endec/json/json_serializer.dart';
+
 import '../deserializer.dart';
+import '../endec.dart';
 import '../serializer.dart';
 
 const jsonEndec = JsonEndec._();
@@ -12,24 +15,7 @@ class JsonEndec with Endec<Object?> {
   @override
   void encode<S>(Serializer<S> serializer, Object? value) {
     if (serializer.selfDescribing) {
-      switch (value) {
-        case int value:
-          serializer.i64(value);
-        case double value:
-          serializer.f64(value);
-        case String value:
-          serializer.string(value);
-        case bool value:
-          serializer.boolean(value);
-        case List<dynamic> value:
-          listOf().encode(serializer, value.cast());
-        case Map<String, dynamic> value:
-          mapOf().encode(serializer, value.cast());
-        case null:
-          serializer.optional(this, null);
-        case _:
-          throw "Not a valid JSON value: $value";
-      }
+      JsonDeserializer(value).any(serializer);
     } else {
       serializer.string(jsonEncode(value));
     }
@@ -38,7 +24,9 @@ class JsonEndec with Endec<Object?> {
   @override
   Object? decode<S>(Deserializer<S> deserializer) {
     if (deserializer is SelfDescribingDeserializer<S>) {
-      return deserializer.any();
+      final visitor = JsonSerializer();
+      deserializer.any(visitor);
+      return visitor.result;
     } else {
       return jsonDecode(deserializer.string());
     }

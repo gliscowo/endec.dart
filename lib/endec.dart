@@ -45,7 +45,7 @@ class _ListEndec<T> with Endec<List<T>> {
 
   @override
   void encode<S>(Serializer<S> serializer, List<T> value) {
-    var state = serializer.sequence<T>(_elementEndec, value.length);
+    var state = serializer.sequence(_elementEndec, value.length);
     for (final element in value) {
       state.element(element);
     }
@@ -71,7 +71,7 @@ class _StringMapEndec<T> with Endec<Map<String, T>> {
 
   @override
   void encode<S>(Serializer<S> serializer, Map<String, T> value) {
-    var state = serializer.map<T>(_valueEndec, value.length);
+    var state = serializer.map(_valueEndec, value.length);
     for (final MapEntry(:key, :value) in value.entries) {
       state.entry(key, value);
     }

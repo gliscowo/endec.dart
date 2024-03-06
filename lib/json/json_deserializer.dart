@@ -1,19 +1,22 @@
 import 'dart:collection';
 import 'dart:typed_data';
 
-import '../endec.dart';
+import 'package:endec/json/json_endec.dart';
+import 'package:endec/serializer.dart';
+
 import '../deserializer.dart';
+import '../endec.dart';
 
 T fromJson<T>(Endec<T> endec, Object json) {
   final deserializer = JsonDeserializer(json);
   return endec.decode(deserializer);
 }
 
-typedef JsonSource = Object Function();
+typedef JsonSource = Object? Function();
 
 class JsonDeserializer implements SelfDescribingDeserializer<Object?> {
   final Queue<JsonSource> _sources = Queue();
-  final Object _serialized;
+  final Object? _serialized;
 
   JsonDeserializer(this._serialized) {
     _sources.add(() => _serialized);
@@ -22,7 +25,36 @@ class JsonDeserializer implements SelfDescribingDeserializer<Object?> {
   T _getObject<T>() => _sources.last() as T;
 
   @override
-  Object? any() => _getObject();
+  void any<S>(Serializer<S> visitor) => _decodeElement(visitor, _getObject());
+  void _decodeElement(Serializer visitor, Object? element) {
+    switch (element) {
+      case null:
+        visitor.optional(jsonEndec, element);
+      case int value:
+        visitor.i64(value);
+      case double value:
+        visitor.f64(value);
+      case bool value:
+        visitor.boolean(value);
+      case String value:
+        visitor.string(value);
+        visitor.string(value);
+      case List<dynamic> value:
+        final state = visitor.sequence(Endec<Object?>.of(_decodeElement, (deserializer) => null), value.length);
+        for (final element in value) {
+          state.element(element);
+        }
+        state.end();
+      case Map<String, dynamic> value:
+        final state = visitor.map(Endec<Object?>.of(_decodeElement, (deserializer) => null), value.length);
+        for (final MapEntry(:key, :value) in value.entries) {
+          state.entry(key, value);
+        }
+        state.end();
+      case _:
+        throw ArgumentError.value(element, "element", "Non-standard, unrecognized JSON element cannot be decoded");
+    }
+  }
 
   @override
   bool boolean() => _getObject();

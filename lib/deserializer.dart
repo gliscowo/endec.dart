@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import 'package:endec/serializer.dart';
+
 import 'endec.dart';
 
 abstract interface class Deserializer<T> {
@@ -30,7 +32,7 @@ abstract interface class Deserializer<T> {
 }
 
 abstract interface class SelfDescribingDeserializer<T> extends Deserializer<T> {
-  Object? any();
+  void any<S>(Serializer<S> visitor);
 }
 
 abstract interface class SequenceDeserializer<E> {

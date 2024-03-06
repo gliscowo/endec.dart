@@ -1,7 +1,10 @@
 import 'dart:typed_data';
 
-import '../endec.dart';
+import 'package:endec/nbt/nbt_deserializer.dart';
+import 'package:endec/nbt/nbt_serializer.dart';
+
 import '../deserializer.dart';
+import '../endec.dart';
 import '../serializer.dart';
 import 'nbt_io.dart';
 import 'nbt_types.dart';
@@ -14,34 +17,7 @@ class NbtEndec with Endec<NbtElement> {
   @override
   void encode<S>(Serializer<S> serializer, NbtElement value) {
     if (serializer.selfDescribing) {
-      switch (value) {
-        case NbtByte byte:
-          serializer.i8(byte.value);
-        case NbtShort short:
-          serializer.i16(short.value);
-        case NbtInt int:
-          serializer.i32(int.value);
-        case NbtLong long:
-          serializer.i64(long.value);
-        case NbtFloat float:
-          serializer.f32(float.value);
-        case NbtDouble double:
-          serializer.f64(double.value);
-        case NbtByteArray byteArray:
-          serializer.bytes(byteArray.value);
-        case NbtIntArray intArray:
-          Endec.int.listOf().encode(serializer, intArray.value);
-        case NbtLongArray longArray:
-          Endec.int.listOf().encode(serializer, longArray.value);
-        case NbtString string:
-          serializer.string(string.value);
-        case NbtList list:
-          listOf().encode(serializer, list.value);
-        case NbtCompound compound:
-          mapOf().encode(serializer, compound.value);
-        case _:
-          throw "Not a valid NBT element: $value";
-      }
+      NbtDeserializer(value).any(serializer);
     } else {
       final writer = NbtWriter()..i8(value.type.index);
       value.write(writer);
@@ -53,22 +29,12 @@ class NbtEndec with Endec<NbtElement> {
   @override
   NbtElement decode<S>(Deserializer<S> deserializer) {
     if (deserializer is SelfDescribingDeserializer<S>) {
-      return _dataToNbt(deserializer.any()!);
+      final visitor = NbtSerializer();
+      deserializer.any(visitor);
+      return visitor.result;
     } else {
       final reader = NbtReader(ByteData.view(deserializer.bytes().buffer));
       return reader.nbtElement(NbtElementType.byId(reader.i8()));
     }
-  }
-
-  NbtElement _dataToNbt(Object value) {
-    return switch (value) {
-      int value => NbtInt(value),
-      double value => NbtDouble(value),
-      String value => NbtString(value),
-      Uint8List value => NbtByteArray(value),
-      List<dynamic> value => NbtList(value.map((e) => _dataToNbt(e)).toList()),
-      Map<String, dynamic> value => NbtCompound(value.map((key, value) => MapEntry(key, _dataToNbt(value)))),
-      _ => throw "",
-    } as NbtElement;
   }
 }

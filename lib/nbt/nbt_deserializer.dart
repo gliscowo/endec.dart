@@ -1,8 +1,10 @@
 import 'dart:collection';
 import 'dart:typed_data';
 
-import '../endec.dart';
+import 'package:endec/serializer.dart';
+
 import '../deserializer.dart';
+import '../endec.dart';
 import 'nbt_types.dart';
 
 T fromNbt<T>(Endec<T> endec, NbtElement nbt) {
@@ -23,12 +25,65 @@ class NbtDeserializer implements SelfDescribingDeserializer<Object?> {
   E _getElement<E extends NbtElement>() => _sources.last() as E;
 
   @override
-  Object? any() => _nbtToData(_getElement());
-  Object _nbtToData(NbtElement element) => switch (element) {
-        NbtCompound compound => compound.value.map((key, value) => MapEntry(key, _nbtToData(value))),
-        NbtList list => list.value.map(_nbtToData).toList(),
-        _ => element.value
-      };
+  void any<S>(Serializer<S> visitor) => _decodeElement(visitor, _getElement());
+  void _decodeElement(Serializer visitor, NbtElement element) {
+    switch (element.type) {
+      case NbtElementType.byte:
+        visitor.i8((element as NbtByte).value);
+      case NbtElementType.short:
+        visitor.i16((element as NbtShort).value);
+      case NbtElementType.int:
+        visitor.i32((element as NbtInt).value);
+      case NbtElementType.long:
+        visitor.i64((element as NbtLong).value);
+      case NbtElementType.float:
+        visitor.f32((element as NbtFloat).value);
+      case NbtElementType.double:
+        visitor.f64((element as NbtDouble).value);
+      case NbtElementType.string:
+        visitor.string((element as NbtString).value);
+      case NbtElementType.byteArray:
+        visitor.bytes((element as NbtByteArray).value);
+      case NbtElementType.intArray:
+        final list = (element as NbtIntArray).value;
+
+        var state = visitor.sequence(
+          Endec<int>.of((serializer, value) => serializer.i32(value), (deserializer) => deserializer.i32()),
+          list.length,
+        );
+
+        for (final element in list) {
+          state.element(element);
+        }
+        state.end();
+      case NbtElementType.longArray:
+        final list = (element as NbtLongArray).value;
+
+        var state = visitor.sequence(Endec.int, list.length);
+        for (final element in list) {
+          state.element(element);
+        }
+        state.end();
+      case NbtElementType.list:
+        final list = (element as NbtList).value;
+
+        var state = visitor.sequence(Endec<NbtElement>.of(_decodeElement, (deserializer) => NbtByte(0)), list.length);
+        for (final element in list) {
+          state.element(element);
+        }
+        state.end();
+      case NbtElementType.compound:
+        final map = (element as NbtCompound).value;
+
+        var state = visitor.map(Endec<NbtElement>.of(_decodeElement, (deserializer) => NbtByte(0)), map.length);
+        for (final MapEntry(:key, :value) in map.entries) {
+          state.entry(key, value);
+        }
+        state.end();
+      case _:
+        throw ArgumentError.value(element, "element", "Non-standard, unrecognized NbtElement cannot be decoded");
+    }
+  }
 
   @override
   bool boolean() => _getElement<NbtByte>().value == 1;
