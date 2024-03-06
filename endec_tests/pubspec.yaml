@@ -1,0 +1,23 @@
+name: endec_tests
+description: A sample command-line application.
+version: 1.0.0
+# repository: https://github.com/my_org/my_repo
+
+publish_to: none
+
+environment:
+  sdk: ^3.3.0
+
+dependencies:
+  endec:
+    path: ..
+  endec_json:
+    path: ../endec_json
+  endec_nbt:
+    path: ../endec_nbt
+  endec_binary:
+    path: ../endec_binary
+
+dev_dependencies:
+  lints: ^3.0.0
+  test: ^1.24.0

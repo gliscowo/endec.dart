@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import '../endec.dart';
-import '../serializer.dart';
+import 'package:endec/endec.dart';
+import 'package:endec/serializer.dart';
 
 Uint8List toBinary<T>(Endec<T> endec, T value) {
   final serializer = BinarySerializer();

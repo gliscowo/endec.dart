@@ -1,12 +1,8 @@
 import 'dart:io';
 
 import 'package:endec/endec.dart';
-import 'package:endec/nbt/nbt_deserializer.dart';
-import 'package:endec/nbt/nbt_io.dart';
-import 'package:endec/nbt/nbt_serializer.dart';
-import 'package:endec/nbt/nbt_types.dart';
-import 'package:endec/nbt/snbt.dart';
 import 'package:endec/struct_endec.dart';
+import 'package:endec_nbt/endec_nbt.dart';
 
 void main(List<String> args) {
   var encoded = toNbt(

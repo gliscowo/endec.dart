@@ -1,12 +1,12 @@
 import 'dart:typed_data';
 
-import 'package:endec/nbt/nbt_deserializer.dart';
-import 'package:endec/nbt/nbt_serializer.dart';
+import 'package:endec/deserializer.dart';
+import 'package:endec/endec.dart';
+import 'package:endec/serializer.dart';
 
-import '../deserializer.dart';
-import '../endec.dart';
-import '../serializer.dart';
+import 'nbt_deserializer.dart';
 import 'nbt_io.dart';
+import 'nbt_serializer.dart';
 import 'nbt_types.dart';
 
 const nbtEndec = NbtEndec._();

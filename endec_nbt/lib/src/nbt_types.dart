@@ -1,5 +1,5 @@
-import 'dart:core' hide int;
 import 'dart:core' as dart show int;
+import 'dart:core' hide int;
 import 'dart:typed_data';
 
 import 'nbt_io.dart';
@@ -23,7 +23,7 @@ enum NbtElementType {
   factory NbtElementType.byId(dart.int id) => NbtElementType.values.firstWhere((element) => element.index == id);
 }
 
-abstract base class NbtElement<T> {
+sealed class NbtElement<T> {
   final T _value;
   const NbtElement(this._value);
 

@@ -1,11 +1,11 @@
 import 'dart:collection';
 import 'dart:typed_data';
 
-import 'package:endec/json/json_endec.dart';
+import 'package:endec/deserializer.dart';
+import 'package:endec/endec.dart';
 import 'package:endec/serializer.dart';
 
-import '../deserializer.dart';
-import '../endec.dart';
+import 'json_endec.dart';
 
 T fromJson<T>(Endec<T> endec, Object json) {
   final deserializer = JsonDeserializer(json);

@@ -1,8 +1,9 @@
 import 'dart:collection';
 import 'dart:typed_data';
 
-import '../endec.dart';
-import '../serializer.dart';
+import 'package:endec/endec.dart';
+import 'package:endec/serializer.dart';
+
 import 'nbt_types.dart';
 
 NbtElement toNbt<T>(Endec<T> endec, T value) {

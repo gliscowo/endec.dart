@@ -1,10 +1,10 @@
 import 'dart:collection';
 import 'dart:typed_data';
 
+import 'package:endec/deserializer.dart';
+import 'package:endec/endec.dart';
 import 'package:endec/serializer.dart';
 
-import '../deserializer.dart';
-import '../endec.dart';
 import 'nbt_types.dart';
 
 T fromNbt<T>(Endec<T> endec, NbtElement nbt) {
