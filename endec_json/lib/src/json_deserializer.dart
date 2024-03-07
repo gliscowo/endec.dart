@@ -14,7 +14,7 @@ T fromJson<T>(Endec<T> endec, Object json) {
 
 typedef JsonSource = Object? Function();
 
-class JsonDeserializer implements SelfDescribingDeserializer<Object?> {
+class JsonDeserializer implements SelfDescribingDeserializer {
   final Queue<JsonSource> _sources = Queue();
   final Object? _serialized;
 
@@ -25,7 +25,7 @@ class JsonDeserializer implements SelfDescribingDeserializer<Object?> {
   T _getObject<T>() => _sources.last() as T;
 
   @override
-  void any<S>(Serializer<S> visitor) => _decodeElement(visitor, _getObject());
+  void any(Serializer visitor) => _decodeElement(visitor, _getObject());
   void _decodeElement(Serializer visitor, Object? element) {
     switch (element) {
       case null:

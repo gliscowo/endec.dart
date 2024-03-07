@@ -13,7 +13,7 @@ class JsonEndec with Endec<Object?> {
   const JsonEndec._();
 
   @override
-  void encode<S>(Serializer<S> serializer, Object? value) {
+  void encode(Serializer serializer, Object? value) {
     if (serializer.selfDescribing) {
       JsonDeserializer(value).any(serializer);
     } else {
@@ -22,8 +22,8 @@ class JsonEndec with Endec<Object?> {
   }
 
   @override
-  Object? decode<S>(Deserializer<S> deserializer) {
-    if (deserializer is SelfDescribingDeserializer<S>) {
+  Object? decode(Deserializer deserializer) {
+    if (deserializer is SelfDescribingDeserializer) {
       final visitor = JsonSerializer();
       deserializer.any(visitor);
       return visitor.result;

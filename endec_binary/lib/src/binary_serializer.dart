@@ -11,7 +11,7 @@ Uint8List toBinary<T>(Endec<T> endec, T value) {
   return serializer.result;
 }
 
-class BinarySerializer implements Serializer<Uint8List> {
+class BinarySerializer implements Serializer {
   @override
   final bool selfDescribing = false;
 
@@ -91,7 +91,6 @@ class BinarySerializer implements Serializer<Uint8List> {
   @override
   StructSerializer struct() => _BinaryStructSerializer(this);
 
-  @override
   Uint8List get result => Uint8List.view(_buffer.buffer, 0, _cursor);
 
   void _ensureCapacity(int bytes) {

@@ -14,7 +14,7 @@ T fromNbt<T>(Endec<T> endec, NbtElement nbt) {
 
 typedef NbtSource = NbtElement Function();
 
-class NbtDeserializer implements SelfDescribingDeserializer<Object?> {
+class NbtDeserializer implements SelfDescribingDeserializer {
   final Queue<NbtSource> _sources = Queue();
   final NbtElement _serialized;
 
@@ -25,7 +25,7 @@ class NbtDeserializer implements SelfDescribingDeserializer<Object?> {
   E _getElement<E extends NbtElement>() => _sources.last() as E;
 
   @override
-  void any<S>(Serializer<S> visitor) => _decodeElement(visitor, _getElement());
+  void any(Serializer visitor) => _decodeElement(visitor, _getElement());
   void _decodeElement(Serializer visitor, NbtElement element) {
     switch (element.type) {
       case NbtElementType.byte:

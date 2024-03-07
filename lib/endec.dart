@@ -29,8 +29,8 @@ abstract mixin class Endec<T> {
       .listOf()
       .xmap(Map.fromEntries, (map) => map.entries.toList());
 
-  void encode<S>(Serializer<S> serializer, T value);
-  T decode<S>(Deserializer<S> deserializer);
+  void encode(Serializer serializer, T value);
+  T decode(Deserializer deserializer);
 
   Endec<List<T>> listOf() => _ListEndec(this);
   Endec<Map<String, T>> mapOf() => _StringMapEndec(this);
@@ -44,7 +44,7 @@ class _ListEndec<T> with Endec<List<T>> {
   _ListEndec(this._elementEndec);
 
   @override
-  void encode<S>(Serializer<S> serializer, List<T> value) {
+  void encode(Serializer serializer, List<T> value) {
     var state = serializer.sequence(_elementEndec, value.length);
     for (final element in value) {
       state.element(element);
@@ -53,7 +53,7 @@ class _ListEndec<T> with Endec<List<T>> {
   }
 
   @override
-  List<T> decode<S>(Deserializer<S> deserializer) {
+  List<T> decode(Deserializer deserializer) {
     final result = <T>[];
 
     var state = deserializer.sequence(_elementEndec);
@@ -70,7 +70,7 @@ class _StringMapEndec<T> with Endec<Map<String, T>> {
   _StringMapEndec(this._valueEndec);
 
   @override
-  void encode<S>(Serializer<S> serializer, Map<String, T> value) {
+  void encode(Serializer serializer, Map<String, T> value) {
     var state = serializer.map(_valueEndec, value.length);
     for (final MapEntry(:key, :value) in value.entries) {
       state.entry(key, value);
@@ -79,7 +79,7 @@ class _StringMapEndec<T> with Endec<Map<String, T>> {
   }
 
   @override
-  Map<String, T> decode<S>(Deserializer<S> deserializer) {
+  Map<String, T> decode(Deserializer deserializer) {
     final result = <String, T>{};
 
     var state = deserializer.map(_valueEndec);
@@ -97,9 +97,9 @@ class _OptionalEndec<T> with Endec<T?> {
   _OptionalEndec(this._valueEndec);
 
   @override
-  T? decode<S>(Deserializer<S> deserializer) => deserializer.optional(_valueEndec);
+  T? decode(Deserializer deserializer) => deserializer.optional(_valueEndec);
   @override
-  void encode<S>(Serializer<S> serializer, T? value) => serializer.optional(_valueEndec, value);
+  void encode(Serializer serializer, T? value) => serializer.optional(_valueEndec, value);
 }
 
 class _XmapEndec<T, U> with Endec<U> {
@@ -110,9 +110,9 @@ class _XmapEndec<T, U> with Endec<U> {
   _XmapEndec(this._sourceEndec, this._to, this._from);
 
   @override
-  void encode<S>(Serializer<S> serializer, U value) => _sourceEndec.encode(serializer, _from(value));
+  void encode(Serializer serializer, U value) => _sourceEndec.encode(serializer, _from(value));
   @override
-  U decode<S>(Deserializer<S> deserializer) => _to(_sourceEndec.decode(deserializer));
+  U decode(Deserializer deserializer) => _to(_sourceEndec.decode(deserializer));
 }
 
 class _SimpleEndec<T> with Endec<T> {
@@ -121,7 +121,7 @@ class _SimpleEndec<T> with Endec<T> {
   _SimpleEndec(this._encoder, this._decoder);
 
   @override
-  void encode<S>(Serializer<S> serializer, T value) => _encoder(serializer, value);
+  void encode(Serializer serializer, T value) => _encoder(serializer, value);
   @override
-  T decode<S>(Deserializer<S> deserializer) => _decoder(deserializer);
+  T decode(Deserializer deserializer) => _decoder(deserializer);
 }

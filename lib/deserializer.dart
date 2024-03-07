@@ -4,7 +4,7 @@ import 'package:endec/serializer.dart';
 
 import 'endec.dart';
 
-abstract interface class Deserializer<T> {
+abstract interface class Deserializer {
   bool boolean();
   E? optional<E>(Endec<E> endec);
 
@@ -31,8 +31,8 @@ abstract interface class Deserializer<T> {
   StructDeserializer struct();
 }
 
-abstract interface class SelfDescribingDeserializer<T> extends Deserializer<T> {
-  void any<S>(Serializer<S> visitor);
+abstract interface class SelfDescribingDeserializer extends Deserializer {
+  void any(Serializer visitor);
 }
 
 abstract interface class SequenceDeserializer<E> {

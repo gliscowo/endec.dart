@@ -12,7 +12,7 @@ Object toJson<T>(Endec<T> endec, T value) {
 
 typedef JsonSink = void Function(Object? jsonValue);
 
-class JsonSerializer implements Serializer<Object> {
+class JsonSerializer implements Serializer {
   @override
   final bool selfDescribing = true;
 
@@ -73,7 +73,6 @@ class JsonSerializer implements Serializer<Object> {
   @override
   StructSerializer struct() => _JsonMapSerializer.struct(this);
 
-  @override
   Object get result => _result ?? const <String, dynamic>{};
 
   void _pushSink(JsonSink sink) => _sinks.addLast(sink);

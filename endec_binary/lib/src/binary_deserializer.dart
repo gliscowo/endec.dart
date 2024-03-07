@@ -6,7 +6,7 @@ import 'package:endec/endec.dart';
 
 T fromBinary<T>(Endec<T> endec, Uint8List encoded) => endec.decode(BinaryDeserializer(ByteData.view(encoded.buffer)));
 
-class BinaryDeserializer implements Deserializer<Uint8List> {
+class BinaryDeserializer implements Deserializer {
   final ByteData _buffer;
   int _cursor = 0;
 

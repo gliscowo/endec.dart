@@ -14,7 +14,7 @@ NbtElement toNbt<T>(Endec<T> endec, T value) {
 
 typedef NbtSink = void Function(NbtElement nbtValue);
 
-class NbtSerializer implements Serializer<NbtElement> {
+class NbtSerializer implements Serializer {
   @override
   final bool selfDescribing = true;
 
@@ -74,7 +74,6 @@ class NbtSerializer implements Serializer<NbtElement> {
   @override
   StructSerializer struct() => _NbtMapSerializer.struct(this);
 
-  @override
   NbtElement get result => _result ?? NbtCompound(const {});
 
   void _pushSink(NbtSink sink) => _sinks.addLast(sink);

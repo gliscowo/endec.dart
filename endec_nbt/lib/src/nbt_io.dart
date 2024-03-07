@@ -4,6 +4,10 @@ import 'dart:typed_data';
 
 import 'nbt_types.dart';
 
+extension Encode on NbtCompound {
+  List<int> encode({bool compress = false}) => nbtToBinary(this, compress: compress);
+}
+
 List<int> nbtToBinary(NbtCompound nbt, {bool compress = false}) {
   var output = NbtWriter();
   output.i8(NbtElementType.compound.index);

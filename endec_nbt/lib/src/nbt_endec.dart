@@ -15,7 +15,7 @@ class NbtEndec with Endec<NbtElement> {
   const NbtEndec._();
 
   @override
-  void encode<S>(Serializer<S> serializer, NbtElement value) {
+  void encode(Serializer serializer, NbtElement value) {
     if (serializer.selfDescribing) {
       NbtDeserializer(value).any(serializer);
     } else {
@@ -27,8 +27,8 @@ class NbtEndec with Endec<NbtElement> {
   }
 
   @override
-  NbtElement decode<S>(Deserializer<S> deserializer) {
-    if (deserializer is SelfDescribingDeserializer<S>) {
+  NbtElement decode(Deserializer deserializer) {
+    if (deserializer is SelfDescribingDeserializer) {
       final visitor = NbtSerializer();
       deserializer.any(visitor);
       return visitor.result;

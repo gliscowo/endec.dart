@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'endec.dart';
 
-abstract interface class Serializer<T> {
+abstract interface class Serializer {
   void boolean(bool value);
   void optional<E>(Endec<E> endec, E? value);
 
@@ -28,7 +28,6 @@ abstract interface class Serializer<T> {
   MapSerializer<V> map<V>(Endec<V> valueEndec, int length);
   StructSerializer struct();
 
-  T get result;
   bool get selfDescribing;
 }
 
