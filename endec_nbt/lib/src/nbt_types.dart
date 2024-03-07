@@ -123,10 +123,10 @@ final class NbtByteArray extends NbtElement<Int8List> {
   final NbtElementType type = NbtElementType.byteArray;
 
   NbtByteArray(super._value);
-  factory NbtByteArray.read(NbtReader input) => NbtByteArray(input.bytes());
+  factory NbtByteArray.read(NbtReader input) => NbtByteArray(input.signedBytes());
 
   @override
-  void write(NbtWriter output) => output.bytes(_value);
+  void write(NbtWriter output) => output.signedBytes(_value);
 }
 
 final class NbtIntArray extends NbtElement<Int32List> {

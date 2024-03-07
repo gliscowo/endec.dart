@@ -60,17 +60,17 @@ class NbtWriter {
     var encoded = utf8.encode(value);
 
     _write(_buffer.setUint16, encoded.length, 2);
-
-    _ensureCapacity(encoded.length);
-    _buffer.buffer.asUint8List().setRange(_cursor, _cursor + encoded.length, encoded);
-    _cursor += encoded.length;
+    _writeBytes(encoded, (buffer) => buffer.asUint8List());
   }
 
-  void bytes(Int8List bytes) {
+  void signedBytes(Int8List bytes) {
     i32(bytes.length);
+    _writeBytes(bytes, (buffer) => buffer.asInt8List());
+  }
 
+  void _writeBytes(List<int> bytes, List<int> Function(ByteBuffer) bufferTransform) {
     _ensureCapacity(bytes.length);
-    _buffer.buffer.asInt8List().setRange(_cursor, _cursor + bytes.length, bytes);
+    bufferTransform(_buffer.buffer).setRange(_cursor, _cursor + bytes.length, bytes);
     _cursor += bytes.length;
   }
 
@@ -123,11 +123,11 @@ class NbtReader {
     return value;
   }
 
-  String string() => utf8.decode(_readBytes(_read(_buffer.getUint16, 2)));
-  Int8List bytes() => _readBytes(i32());
+  String string() => utf8.decode(_readBytes(Uint8List.view, _read(_buffer.getUint16, 2)));
+  Int8List signedBytes() => _readBytes(Int8List.view, i32());
 
-  Int8List _readBytes(int length) {
-    final list = Int8List.view(_buffer.buffer, _cursor, length);
+  L _readBytes<L>(L Function(ByteBuffer, int, int) constructor, int length) {
+    final list = constructor(_buffer.buffer, _cursor, length);
     _cursor += length;
 
     return list;
