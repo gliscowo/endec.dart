@@ -3,7 +3,6 @@ import 'dart:core' hide int;
 import 'dart:typed_data';
 
 import 'nbt_io.dart';
-import 'snbt.dart';
 
 enum NbtElementType {
   end,
@@ -29,7 +28,6 @@ sealed class NbtElement<T> {
 
   NbtElementType get type;
   void write(NbtWriter output);
-  void stringify(SnbtWriter writer);
 
   T get value => _value;
 
@@ -46,8 +44,6 @@ final class NbtString extends NbtElement<String> {
 
   @override
   void write(NbtWriter output) => output.string(_value);
-  @override
-  void stringify(SnbtWriter writer) => writer.write('"${writer.escape(_value)}"');
 }
 
 // --- integer types ---
@@ -61,8 +57,6 @@ final class NbtByte extends NbtElement<dart.int> {
 
   @override
   void write(NbtWriter output) => output.i8(_value);
-  @override
-  void stringify(SnbtWriter writer) => writer.write("${_value}b");
 }
 
 final class NbtShort extends NbtElement<dart.int> {
@@ -74,8 +68,6 @@ final class NbtShort extends NbtElement<dart.int> {
 
   @override
   void write(NbtWriter output) => output.i16(_value);
-  @override
-  void stringify(SnbtWriter writer) => writer.write("${_value}s");
 }
 
 final class NbtInt extends NbtElement<dart.int> {
@@ -87,8 +79,6 @@ final class NbtInt extends NbtElement<dart.int> {
 
   @override
   void write(NbtWriter output) => output.i32(_value);
-  @override
-  void stringify(SnbtWriter writer) => writer.write("$_value");
 }
 
 final class NbtLong extends NbtElement<dart.int> {
@@ -100,8 +90,6 @@ final class NbtLong extends NbtElement<dart.int> {
 
   @override
   void write(NbtWriter output) => output.i64(_value);
-  @override
-  void stringify(SnbtWriter writer) => writer.write("${_value}L");
 }
 
 // --- floating point types ---
@@ -115,8 +103,6 @@ final class NbtFloat extends NbtElement<double> {
 
   @override
   void write(NbtWriter output) => output.f32(_value);
-  @override
-  void stringify(SnbtWriter writer) => writer.write("${_value}f");
 }
 
 final class NbtDouble extends NbtElement<double> {
@@ -128,13 +114,11 @@ final class NbtDouble extends NbtElement<double> {
 
   @override
   void write(NbtWriter output) => output.f64(_value);
-  @override
-  void stringify(SnbtWriter writer) => writer.write("$_value");
 }
 
 // --- array types ---
 
-final class NbtByteArray extends NbtElement<Uint8List> {
+final class NbtByteArray extends NbtElement<Int8List> {
   @override
   final NbtElementType type = NbtElementType.byteArray;
 
@@ -143,11 +127,9 @@ final class NbtByteArray extends NbtElement<Uint8List> {
 
   @override
   void write(NbtWriter output) => output.bytes(_value);
-  @override
-  void stringify(SnbtWriter writer) => writer.write("[B; ${_value.map((e) => "${e}b").join(", ")}]");
 }
 
-final class NbtIntArray extends NbtElement<List<dart.int>> {
+final class NbtIntArray extends NbtElement<Int32List> {
   @override
   final NbtElementType type = NbtElementType.intArray;
 
@@ -155,7 +137,7 @@ final class NbtIntArray extends NbtElement<List<dart.int>> {
   factory NbtIntArray.read(NbtReader input) {
     final length = input.i32();
 
-    final list = <dart.int>[];
+    final list = Int32List(length);
     for (var i = 0; i < length; i++) {
       list.add(input.i32());
     }
@@ -170,12 +152,9 @@ final class NbtIntArray extends NbtElement<List<dart.int>> {
       output.i32(element);
     }
   }
-
-  @override
-  void stringify(SnbtWriter writer) => writer.write("[I; ${_value.join(", ")}]");
 }
 
-final class NbtLongArray extends NbtElement<List<dart.int>> {
+final class NbtLongArray extends NbtElement<Int64List> {
   @override
   final NbtElementType type = NbtElementType.longArray;
 
@@ -183,7 +162,7 @@ final class NbtLongArray extends NbtElement<List<dart.int>> {
   factory NbtLongArray.read(NbtReader input) {
     final length = input.i32();
 
-    final list = <dart.int>[];
+    final list = Int64List(length);
     for (var i = 0; i < length; i++) {
       list.add(input.i64());
     }
@@ -198,9 +177,6 @@ final class NbtLongArray extends NbtElement<List<dart.int>> {
       output.i64(element);
     }
   }
-
-  @override
-  void stringify(SnbtWriter writer) => writer.write("[L; ${_value.map((e) => "${e}L").join(", ")}]");
 }
 
 // --- compound types ---
@@ -231,20 +207,10 @@ final class NbtList extends NbtElement<List<NbtElement>> {
       element.write(output);
     }
   }
-
-  @override
-  void stringify(SnbtWriter writer) {
-    writer.startBlock('[', ']');
-    for (final (idx, element) in _value.indexed) {
-      element.stringify(writer);
-      if (idx < _value.length - 1) writer.writeln(",");
-    }
-    writer.endBlock();
-  }
 }
 
 final class NbtCompound extends NbtElement<Map<String, NbtElement>> {
-  static final _safeKeyRegex = RegExp(r"^[a-zA-Z0-9_\+\.-]+$");
+  static final safeKeyRegex = RegExp(r"^[a-zA-Z0-9_\+\.-]+$");
 
   @override
   final NbtElementType type = NbtElementType.compound;
@@ -271,19 +237,5 @@ final class NbtCompound extends NbtElement<Map<String, NbtElement>> {
     }
 
     output.i8(NbtElementType.end.index);
-  }
-
-  @override
-  void stringify(SnbtWriter writer) {
-    writer.startBlock('{', '}');
-
-    for (final (idx, MapEntry(:key, :value)) in _value.entries.indexed) {
-      writer.write(_safeKeyRegex.hasMatch(key) ? "$key: " : '"${writer.escape(key)}": ');
-      value.stringify(writer);
-
-      if (idx < _value.length - 1) writer.writeln(",");
-    }
-
-    writer.endBlock();
   }
 }

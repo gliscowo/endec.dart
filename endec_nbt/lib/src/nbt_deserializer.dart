@@ -43,7 +43,7 @@ class NbtDeserializer implements SelfDescribingDeserializer<Object?> {
       case NbtElementType.string:
         visitor.string((element as NbtString).value);
       case NbtElementType.byteArray:
-        visitor.bytes((element as NbtByteArray).value);
+        visitor.bytes(Uint8List.view((element as NbtByteArray).value.buffer));
       case NbtElementType.intArray:
         final list = (element as NbtIntArray).value;
 
@@ -121,7 +121,7 @@ class NbtDeserializer implements SelfDescribingDeserializer<Object?> {
   @override
   String string() => _getElement<NbtString>().value;
   @override
-  Uint8List bytes() => _getElement<NbtByteArray>().value;
+  Uint8List bytes() => Uint8List.view(_getElement<NbtByteArray>().value.buffer);
 
   @override
   SequenceDeserializer<E> sequence<E>(Endec<E> elementEndec) =>

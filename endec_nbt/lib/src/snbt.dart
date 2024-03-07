@@ -5,14 +5,60 @@ import 'dart:typed_data';
 
 import 'nbt_types.dart';
 
-String nbtToSnbt(NbtElement element) {
-  final writer = SnbtWriter._();
-  element.stringify(writer);
-
-  return writer.toString();
+extension ToSnbt on NbtElement {
+  String toSnbt() => nbtToSnbt(this);
 }
 
 NbtElement snbtToNbt(String snbt) => _SnbtReader(snbt).parseElement();
+
+String nbtToSnbt(NbtElement element) {
+  void stringify(SnbtWriter writer, NbtElement element) {
+    switch (element) {
+      case NbtString(:var value):
+        writer.write('"${writer.escape(value)}"');
+      case NbtByte(:var value):
+        writer.write("${value}b");
+      case NbtShort(:var value):
+        writer.write("${value}s");
+      case NbtInt(:var value):
+        writer.write("$value");
+      case NbtLong(:var value):
+        writer.write("${value}L");
+      case NbtFloat(:var value):
+        writer.write("${value}f");
+      case NbtDouble(:var value):
+        writer.write("$value");
+      case NbtByteArray(:var value):
+        writer.write("[B; ${value.map((e) => "${e}b").join(", ")}]");
+      case NbtIntArray(:var value):
+        writer.write("[I; ${value.join(", ")}]");
+      case NbtLongArray(:var value):
+        writer.write("[L; ${value.map((e) => "${e}L").join(", ")}]");
+      case NbtList(:var value):
+        writer.startBlock('[', ']');
+        for (final (idx, element) in value.indexed) {
+          stringify(writer, element);
+          if (idx < value.length - 1) writer.writeln(",");
+        }
+        writer.endBlock();
+      case NbtCompound(value: var compound):
+        writer.startBlock('{', '}');
+
+        for (final (idx, MapEntry(:key, :value)) in compound.entries.indexed) {
+          writer.write(NbtCompound.safeKeyRegex.hasMatch(key) ? "$key: " : '"${writer.escape(key)}": ');
+          stringify(writer, value);
+
+          if (idx < compound.length - 1) writer.writeln(",");
+        }
+
+        writer.endBlock();
+    }
+  }
+
+  final writer = SnbtWriter._();
+  stringify(writer, element);
+  return writer.toString();
+}
 
 class SnbtWriter {
   final StringBuffer _result = StringBuffer();
@@ -99,11 +145,11 @@ class _SnbtReader {
 
   NbtElement parseArray() {
     if (expect("[B;")) {
-      return NbtByteArray(Uint8List.fromList(parsePrimitiveArrayElements(NbtElementType.byte)));
+      return NbtByteArray(Int8List.fromList(parsePrimitiveArrayElements(NbtElementType.byte)));
     } else if (expect("[I;")) {
-      return NbtIntArray(parsePrimitiveArrayElements(NbtElementType.int));
+      return NbtIntArray(Int32List.fromList(parsePrimitiveArrayElements(NbtElementType.int)));
     } else if (expect("[L;")) {
-      return NbtLongArray(parsePrimitiveArrayElements(NbtElementType.long));
+      return NbtLongArray(Int64List.fromList(parsePrimitiveArrayElements(NbtElementType.long)));
     } else {
       var list = <NbtElement>[];
       _cursor++;
@@ -271,7 +317,7 @@ class _SnbtReader {
 }
 
 void main(List<String> args) {
-  print(nbtToSnbt(snbtToNbt(File("bigtest.snbt").readAsStringSync())));
+  print(snbtToNbt(File("bigtest.snbt").readAsStringSync()).toSnbt());
 }
 
 class SnbtParsingError {

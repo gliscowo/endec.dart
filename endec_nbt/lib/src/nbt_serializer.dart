@@ -65,7 +65,7 @@ class NbtSerializer implements Serializer<NbtElement> {
   @override
   void string(String value) => _sink(NbtString(value));
   @override
-  void bytes(Uint8List bytes) => _sink(NbtByteArray(bytes));
+  void bytes(Uint8List bytes) => _sink(NbtByteArray(Int8List.view(bytes.buffer)));
 
   @override
   SequenceSerializer<E> sequence<E>(Endec<E> elementEndec, int length) => _NbtSequenceSerializer(this, elementEndec);

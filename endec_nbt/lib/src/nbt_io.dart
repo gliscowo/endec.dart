@@ -56,18 +56,17 @@ class NbtWriter {
     var encoded = utf8.encode(value);
 
     _write(_buffer.setUint16, encoded.length, 2);
-    _writeBytes(encoded);
+
+    _ensureCapacity(encoded.length);
+    _buffer.buffer.asUint8List().setRange(_cursor, _cursor + encoded.length, encoded);
+    _cursor += encoded.length;
   }
 
-  void bytes(Uint8List bytes) {
+  void bytes(Int8List bytes) {
     i32(bytes.length);
-    _writeBytes(bytes);
-  }
 
-  void _writeBytes(List<int> bytes) {
     _ensureCapacity(bytes.length);
-    _buffer.buffer.asUint8List().setRange(_cursor, _cursor + bytes.length, bytes);
-
+    _buffer.buffer.asInt8List().setRange(_cursor, _cursor + bytes.length, bytes);
     _cursor += bytes.length;
   }
 
@@ -121,10 +120,10 @@ class NbtReader {
   }
 
   String string() => utf8.decode(_readBytes(_read(_buffer.getUint16, 2)));
-  Uint8List bytes() => _readBytes(i32());
+  Int8List bytes() => _readBytes(i32());
 
-  Uint8List _readBytes(int length) {
-    final list = Uint8List.view(_buffer.buffer, _cursor, length);
+  Int8List _readBytes(int length) {
+    final list = Int8List.view(_buffer.buffer, _cursor, length);
     _cursor += length;
 
     return list;
