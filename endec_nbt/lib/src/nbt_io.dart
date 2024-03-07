@@ -30,7 +30,7 @@ NbtElement binaryToNbt(List<int> data, {bool compressed = false}) {
   var input =
       NbtReader(data is Uint8List ? ByteData.view(data.buffer) : ByteData.view(Uint8List.fromList(data).buffer));
   if (input.i8() != NbtElementType.compound.index) {
-    throw "Root element of NBT file must a TAG_Compound";
+    throw NbtParsingException("Root element of NBT file must a TAG_Compound");
   }
 
   input.string();
@@ -105,7 +105,7 @@ class NbtReader {
         NbtElementType.string => NbtString.read(this),
         NbtElementType.list => NbtList.read(this),
         NbtElementType.compound => NbtCompound.read(this),
-        NbtElementType.end => throw ""
+        NbtElementType.end => throw NbtParsingException("Found TAG_End outside of TAG_Compound, this is invalid")
       } as NbtElement;
 
   int i8() => _read((idx, _) => _buffer.getInt8(idx), 1);
@@ -132,4 +132,12 @@ class NbtReader {
 
     return list;
   }
+}
+
+class NbtParsingException implements Exception {
+  final String message;
+  NbtParsingException(this.message);
+
+  @override
+  String toString() => "NBT Parsing failed: $message";
 }

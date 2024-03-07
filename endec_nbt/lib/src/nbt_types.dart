@@ -2,6 +2,8 @@ import 'dart:core' as dart show int;
 import 'dart:core' hide int;
 import 'dart:typed_data';
 
+import 'package:collection/collection.dart';
+
 import 'nbt_io.dart';
 
 enum NbtElementType {
@@ -33,6 +35,11 @@ sealed class NbtElement<T> {
 
   @override
   String toString() => _value.toString();
+
+  @override
+  bool operator ==(Object other) => other is NbtElement && this.type == other.type && this._value == other._value;
+  @override
+  dart.int get hashCode => Object.hash(type, value);
 }
 
 final class NbtString extends NbtElement<String> {
@@ -118,7 +125,17 @@ final class NbtDouble extends NbtElement<double> {
 
 // --- array types ---
 
-final class NbtByteArray extends NbtElement<Int8List> {
+sealed class NbtArray<A extends List<dart.int>> extends NbtElement<A> {
+  NbtArray(super.value);
+
+  @override
+  bool operator ==(Object other) =>
+      other is NbtArray && type == other.type && ListEquality().equals(_value, other._value);
+  @override
+  dart.int get hashCode => Object.hash(type, ListEquality().hash(_value));
+}
+
+final class NbtByteArray extends NbtArray<Int8List> {
   @override
   final NbtElementType type = NbtElementType.byteArray;
 
@@ -129,7 +146,7 @@ final class NbtByteArray extends NbtElement<Int8List> {
   void write(NbtWriter output) => output.signedBytes(_value);
 }
 
-final class NbtIntArray extends NbtElement<Int32List> {
+final class NbtIntArray extends NbtArray<Int32List> {
   @override
   final NbtElementType type = NbtElementType.intArray;
 
@@ -154,7 +171,7 @@ final class NbtIntArray extends NbtElement<Int32List> {
   }
 }
 
-final class NbtLongArray extends NbtElement<Int64List> {
+final class NbtLongArray extends NbtArray<Int64List> {
   @override
   final NbtElementType type = NbtElementType.longArray;
 
@@ -207,6 +224,11 @@ final class NbtList extends NbtElement<List<NbtElement>> {
       element.write(output);
     }
   }
+
+  @override
+  bool operator ==(Object other) => other is NbtList && ListEquality().equals(_value, other._value);
+  @override
+  dart.int get hashCode => Object.hash(type, ListEquality().hash(_value));
 }
 
 final class NbtCompound extends NbtElement<Map<String, NbtElement>> {
@@ -238,4 +260,9 @@ final class NbtCompound extends NbtElement<Map<String, NbtElement>> {
 
     output.i8(NbtElementType.end.index);
   }
+
+  @override
+  bool operator ==(Object other) => other is NbtCompound && MapEquality().equals(_value, other._value);
+  @override
+  dart.int get hashCode => Object.hash(type, MapEquality().hash(_value));
 }
