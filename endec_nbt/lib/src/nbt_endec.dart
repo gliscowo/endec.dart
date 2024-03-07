@@ -1,8 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:endec/deserializer.dart';
 import 'package:endec/endec.dart';
-import 'package:endec/serializer.dart';
 
 import 'nbt_deserializer.dart';
 import 'nbt_io.dart';

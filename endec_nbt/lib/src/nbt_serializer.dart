@@ -2,7 +2,6 @@ import 'dart:collection';
 import 'dart:typed_data';
 
 import 'package:endec/endec.dart';
-import 'package:endec/serializer.dart';
 
 import 'nbt_types.dart';
 

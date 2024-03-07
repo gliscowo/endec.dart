@@ -1,8 +1,6 @@
 import 'dart:convert';
 
-import 'package:endec/deserializer.dart';
 import 'package:endec/endec.dart';
-import 'package:endec/serializer.dart';
 
 import 'json_deserializer.dart';
 import 'json_serializer.dart';

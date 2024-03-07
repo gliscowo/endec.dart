@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
-import 'package:endec/serializer.dart';
+import 'package:endec/src/serializer.dart';
 
-import 'endec.dart';
+import 'endec_base.dart';
 
 abstract interface class Deserializer {
   bool boolean();

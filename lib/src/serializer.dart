@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'endec.dart';
+import 'endec_base.dart';
 
 abstract interface class Serializer {
   void boolean(bool value);

@@ -1,9 +1,7 @@
 import 'dart:collection';
 import 'dart:typed_data';
 
-import 'package:endec/deserializer.dart';
 import 'package:endec/endec.dart';
-import 'package:endec/serializer.dart';
 
 import 'json_endec.dart';
 

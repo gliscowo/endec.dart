@@ -1,4 +1,4 @@
-import 'endec.dart';
+import 'endec_base.dart';
 
 extension Field<F> on Endec<F> {
   StructField<S, F> field<S>(String name, F Function(S struct) getter, {F? defaultValue}) =>

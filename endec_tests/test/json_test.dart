@@ -1,5 +1,4 @@
 import 'package:endec/endec.dart';
-import 'package:endec/struct_endec.dart';
 import 'package:endec_json/endec_json.dart';
 import 'package:test/test.dart';
 
