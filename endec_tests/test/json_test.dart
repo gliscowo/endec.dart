@@ -11,10 +11,10 @@ void main() {
 
   test('encode struct', () {
     var endec = structEndec<_Struct>().with4Fields(
-      Endec.string.field("a_field", (struct) => struct.aField),
-      Endec.string.mapOf().field("a_nested_field", (struct) => struct.aNestedField),
-      Endec.double.listOf().field("list_moment", (struct) => struct.listMoment),
-      Endec.string.field("another_field", (struct) => struct.anotherField),
+      Endec.string.fieldOf("a_field", (struct) => struct.aField),
+      Endec.string.mapOf().fieldOf("a_nested_field", (struct) => struct.aNestedField),
+      Endec.double.listOf().fieldOf("list_moment", (struct) => struct.listMoment),
+      Endec.string.fieldOf("another_field", (struct) => struct.anotherField),
       _Struct.new,
     );
 

@@ -46,5 +46,6 @@ abstract interface class MapDeserializer<V> {
 }
 
 abstract interface class StructDeserializer {
-  F field<F>(String name, Endec<F> endec, {F? defaultValue});
+  F field<F>(String name, Endec<F> endec);
+  F optionalField<F>(String name, Endec<F> endec, F defaultValue);
 }

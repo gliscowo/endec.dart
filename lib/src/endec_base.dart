@@ -22,8 +22,8 @@ abstract mixin class Endec<T> {
   factory Endec.of(Encoder<T> encoder, Decoder<T> decoder) => _SimpleEndec(encoder, decoder);
   static Endec<Map<K, V>> map<K, V>(Endec<K> keyEndec, Endec<V> valueEndec) => structEndec<MapEntry<K, V>>()
       .with2Fields(
-        keyEndec.field("k", (entry) => entry.key),
-        valueEndec.field("v", (entry) => entry.value),
+        keyEndec.fieldOf("k", (entry) => entry.key),
+        valueEndec.fieldOf("v", (entry) => entry.value),
         MapEntry.new,
       )
       .listOf()

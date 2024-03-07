@@ -109,5 +109,7 @@ class _BinaryStructDeserializer implements StructDeserializer {
   _BinaryStructDeserializer(this._context);
 
   @override
-  F field<F>(String name, Endec<F> endec, {F? defaultValue}) => endec.decode(_context);
+  F field<F>(String name, Endec<F> endec) => endec.decode(_context);
+  @override
+  F optionalField<F>(String name, Endec<F> endec, F defaultValue) => field(name, endec);
 }
