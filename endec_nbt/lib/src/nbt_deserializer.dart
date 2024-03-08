@@ -166,7 +166,7 @@ class _NbtMapDeserializer<V> implements MapDeserializer<V>, StructDeserializer {
   @override
   F field<F>(String name, Endec<F> endec) {
     if (!_map.containsKey(name)) {
-      throw NbtDecodeError("Required field $name is missing from serialized data");
+      throw NbtDecodeException("Required field $name is missing from serialized data");
     }
 
     _context._pushSource(() => _map[name]!);
@@ -180,7 +180,7 @@ class _NbtMapDeserializer<V> implements MapDeserializer<V>, StructDeserializer {
   F optionalField<F>(String name, Endec<F> endec, F defaultValue) {
     if (!_map.containsKey(name)) {
       if (defaultValue == null) {
-        throw NbtDecodeError("Field $name is missing from serialized data, but no default value was provided");
+        throw NbtDecodeException("Field $name is missing from serialized data, but no default value was provided");
       }
 
       return defaultValue;
@@ -214,9 +214,9 @@ class _NbtSequenceDeserializer<V> implements SequenceDeserializer<V> {
   }
 }
 
-class NbtDecodeError extends Error {
+class NbtDecodeException implements Exception {
   final String message;
-  NbtDecodeError(this.message);
+  NbtDecodeException(this.message);
 
   @override
   String toString() => "NBT decoding failed: $message";

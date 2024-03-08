@@ -1,5 +1,4 @@
 import 'dart:collection';
-import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -312,20 +311,16 @@ class _SnbtReader {
       }
     }
 
-    throw SnbtParsingError(context, reason, (lineIdx, column));
+    throw SnbtParsingException(context, reason, (lineIdx, column));
   }
 }
 
-void main(List<String> args) {
-  print(snbtToNbt(File("bigtest.snbt").readAsStringSync()).toSnbt());
-}
-
-class SnbtParsingError {
+class SnbtParsingException implements Exception {
   final List<String> context;
   final String reason;
   final (int, int) errorIndex;
 
-  SnbtParsingError(this.context, this.reason, this.errorIndex);
+  SnbtParsingException(this.context, this.reason, this.errorIndex);
 
   @override
   String toString() {

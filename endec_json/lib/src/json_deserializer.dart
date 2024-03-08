@@ -132,7 +132,7 @@ class _JsonMapDeserializer<V> implements MapDeserializer<V>, StructDeserializer 
   @override
   F field<F>(String name, Endec<F> endec) {
     if (!_map.containsKey(name)) {
-      throw JsonDecodeError("Required Field $name is missing from serialized data");
+      throw JsonDecodeException("Required Field $name is missing from serialized data");
     }
 
     _context._pushSource(() => _map[name]!);
@@ -146,7 +146,7 @@ class _JsonMapDeserializer<V> implements MapDeserializer<V>, StructDeserializer 
   F optionalField<F>(String name, Endec<F> endec, F defaultValue) {
     if (!_map.containsKey(name)) {
       if (defaultValue == null) {
-        throw JsonDecodeError("Field $name is missing from serialized data, but no default value was provided");
+        throw JsonDecodeException("Field $name is missing from serialized data, but no default value was provided");
       }
 
       return defaultValue;
@@ -180,9 +180,9 @@ class _JsonSequenceDeserializer<V> implements SequenceDeserializer<V> {
   }
 }
 
-class JsonDecodeError extends Error {
+class JsonDecodeException implements Exception {
   final String message;
-  JsonDecodeError(this.message);
+  JsonDecodeException(this.message);
 
   @override
   String toString() => "JSON decoding failed: $message";
