@@ -29,6 +29,8 @@ abstract interface class Deserializer {
   SequenceDeserializer<E> sequence<E>(Endec<E> elementEndec);
   MapDeserializer<V> map<V>(Endec<V> valueEndec);
   StructDeserializer struct();
+
+  tryRead<V>(V Function(Deserializer deserializer) reader);
 }
 
 abstract interface class SelfDescribingDeserializer extends Deserializer {

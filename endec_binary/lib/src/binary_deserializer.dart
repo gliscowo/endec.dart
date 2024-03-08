@@ -70,6 +70,18 @@ class BinaryDeserializer implements Deserializer {
 
   @override
   StructDeserializer struct() => _BinaryStructDeserializer(this);
+
+  @override
+  tryRead<V>(V Function(Deserializer deserializer) reader) {
+    final prevCursor = _cursor;
+
+    try {
+      return reader(this);
+    } catch (_) {
+      _cursor = prevCursor;
+      rethrow;
+    }
+  }
 }
 
 class _BinarySequenceDeserializer<V> implements SequenceDeserializer<V> {

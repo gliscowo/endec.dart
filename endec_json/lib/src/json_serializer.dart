@@ -1,4 +1,3 @@
-import 'dart:collection';
 import 'dart:typed_data';
 
 import 'package:endec/endec.dart';
@@ -9,61 +8,52 @@ Object toJson<T>(Endec<T> endec, T value) {
   return serializer.result;
 }
 
-typedef JsonSink = void Function(Object? jsonValue);
-
-class JsonSerializer implements Serializer {
+class JsonSerializer extends RecursiveSerializer<Object?> implements Serializer {
   @override
   final bool selfDescribing = true;
 
-  final Queue<JsonSink> _sinks = Queue();
-  Object? _result;
-
-  JsonSerializer() {
-    _sinks.add((jsonValue) => _result = jsonValue);
-  }
-
-  void _sink(Object? jsonValue) => _sinks.last(jsonValue);
+  JsonSerializer() : super(null);
 
   @override
-  void boolean(bool value) => _sink(value);
+  void boolean(bool value) => consume(value);
   @override
   void optional<E>(Endec<E> endec, E? value) {
     if (value != null) {
       endec.encode(this, value);
     } else {
-      _sink(null);
+      consume(null);
     }
   }
 
   @override
-  void i8(int value) => _sink(value);
+  void i8(int value) => consume(value);
   @override
-  void u8(int value) => _sink(value);
+  void u8(int value) => consume(value);
 
   @override
-  void i16(int value) => _sink(value);
+  void i16(int value) => consume(value);
   @override
-  void u16(int value) => _sink(value);
+  void u16(int value) => consume(value);
 
   @override
-  void i32(int value) => _sink(value);
+  void i32(int value) => consume(value);
   @override
-  void u32(int value) => _sink(value);
+  void u32(int value) => consume(value);
 
   @override
-  void i64(int value) => _sink(value);
+  void i64(int value) => consume(value);
   @override
-  void u64(int value) => _sink(value);
+  void u64(int value) => consume(value);
 
   @override
-  void f32(double value) => _sink(value);
+  void f32(double value) => consume(value);
   @override
-  void f64(double value) => _sink(value);
+  void f64(double value) => consume(value);
 
   @override
-  void string(String value) => _sink(value);
+  void string(String value) => consume(value);
   @override
-  void bytes(Uint8List bytes) => _sink(bytes);
+  void bytes(Uint8List bytes) => consume(bytes);
 
   @override
   SequenceSerializer<E> sequence<E>(Endec<E> elementEndec, int length) => _JsonSequenceSerializer(this, elementEndec);
@@ -72,10 +62,8 @@ class JsonSerializer implements Serializer {
   @override
   StructSerializer struct() => _JsonMapSerializer.struct(this);
 
-  Object get result => _result ?? const <String, dynamic>{};
-
-  void _pushSink(JsonSink sink) => _sinks.addLast(sink);
-  void _popSink() => _sinks.removeLast();
+  @override
+  Object get result => super.result ?? const <String, dynamic>{};
 }
 
 class _JsonMapSerializer<V> implements MapSerializer<V>, StructSerializer {
@@ -87,27 +75,25 @@ class _JsonMapSerializer<V> implements MapSerializer<V>, StructSerializer {
   _JsonMapSerializer.struct(this._context) : _valueEndec = null;
 
   @override
-  void entry(String key, V value) => _kvPair(key, _valueEndec!, value);
-  @override
-  void field<F, _V extends F>(String key, Endec<F> endec, _V value) => _kvPair(key, endec, value);
-
-  void _kvPair<T>(String key, Endec<T> endec, T value) {
-    var serialized = false;
-    Object? encodedValue;
-
-    _context._pushSink((jsonValue) {
-      serialized = true;
-      encodedValue = jsonValue;
-    });
-    endec.encode(_context, value);
-    _context._popSink();
-
-    if (!serialized) throw JsonEncodeError("No field was serialized");
-    _result[key] = encodedValue;
-  }
+  void entry(String key, V value) => _context.frame(
+        (holder) {
+          _valueEndec!.encode(_context, value);
+          _result[key] = holder.require("map value");
+        },
+        false,
+      );
 
   @override
-  void end() => _context._sink(_result);
+  void field<F, _V extends F>(String key, Endec<F> endec, _V value) => _context.frame(
+        (holder) {
+          endec.encode(_context, value);
+          _result[key] = holder.require("struct field");
+        },
+        true,
+      );
+
+  @override
+  void end() => _context.consume(_result);
 }
 
 class _JsonSequenceSerializer<V> implements SequenceSerializer<V> {
@@ -118,23 +104,16 @@ class _JsonSequenceSerializer<V> implements SequenceSerializer<V> {
   _JsonSequenceSerializer(this._context, this._elementEndec);
 
   @override
-  void element(V value) {
-    var serialized = false;
-    Object? encodedValue;
-
-    _context._pushSink((jsonValue) {
-      serialized = true;
-      encodedValue = jsonValue;
-    });
-    _elementEndec.encode(_context, value);
-    _context._popSink();
-
-    if (!serialized) throw JsonEncodeError("No value was serialized");
-    _result.add(encodedValue);
-  }
+  void element(V value) => _context.frame(
+        (holder) {
+          _elementEndec.encode(_context, value);
+          _result.add(holder.require("sequence element"));
+        },
+        false,
+      );
 
   @override
-  void end() => _context._sink(_result);
+  void end() => _context.consume(_result);
 }
 
 class JsonEncodeError extends Error {

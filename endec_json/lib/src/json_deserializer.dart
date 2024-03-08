@@ -1,4 +1,3 @@
-import 'dart:collection';
 import 'dart:typed_data';
 
 import 'package:endec/endec.dart';
@@ -12,18 +11,11 @@ T fromJson<T>(Endec<T> endec, Object json) {
 
 typedef JsonSource = Object? Function();
 
-class JsonDeserializer implements SelfDescribingDeserializer {
-  final Queue<JsonSource> _sources = Queue();
-  final Object? _serialized;
-
-  JsonDeserializer(this._serialized) {
-    _sources.add(() => _serialized);
-  }
-
-  T _getObject<T>() => _sources.last() as T;
+class JsonDeserializer extends RecursiveDeserializer<Object?> implements SelfDescribingDeserializer {
+  JsonDeserializer(super._serialized);
 
   @override
-  void any(Serializer visitor) => _decodeElement(visitor, _getObject());
+  void any(Serializer visitor) => _decodeElement(visitor, currentValue());
   void _decodeElement(Serializer visitor, Object? element) {
     switch (element) {
       case null:
@@ -55,51 +47,48 @@ class JsonDeserializer implements SelfDescribingDeserializer {
   }
 
   @override
-  bool boolean() => _getObject();
+  bool boolean() => currentValue();
   @override
-  E? optional<E>(Endec<E> endec) => _getObject() != null ? endec.decode(this) : null;
+  E? optional<E>(Endec<E> endec) => currentValue() != null ? endec.decode(this) : null;
 
   @override
-  int i8() => _getObject();
+  int i8() => currentValue();
   @override
-  int u8() => _getObject();
+  int u8() => currentValue();
 
   @override
-  int i16() => _getObject();
+  int i16() => currentValue();
   @override
-  int u16() => _getObject();
+  int u16() => currentValue();
 
   @override
-  int i32() => _getObject();
+  int i32() => currentValue();
   @override
-  int u32() => _getObject();
+  int u32() => currentValue();
 
   @override
-  int i64() => _getObject();
+  int i64() => currentValue();
   @override
-  int u64() => _getObject();
+  int u64() => currentValue();
 
   @override
-  double f32() => _getObject();
+  double f32() => currentValue();
   @override
-  double f64() => _getObject();
+  double f64() => currentValue();
 
   @override
-  String string() => _getObject();
+  String string() => currentValue();
   @override
-  Uint8List bytes() => Uint8List.fromList(_getObject<List<dynamic>>().cast<int>());
+  Uint8List bytes() => Uint8List.fromList(currentValue<List<dynamic>>().cast<int>());
 
   @override
   SequenceDeserializer<E> sequence<E>(Endec<E> elementEndec) =>
-      _JsonSequenceDeserializer(this, elementEndec, _getObject<List<dynamic>>());
+      _JsonSequenceDeserializer(this, elementEndec, currentValue<List<dynamic>>());
   @override
   MapDeserializer<V> map<V>(Endec<V> valueEndec) =>
-      _JsonMapDeserializer.map(this, valueEndec, _getObject<Map<String, dynamic>>());
+      _JsonMapDeserializer.map(this, valueEndec, currentValue<Map<String, dynamic>>());
   @override
-  StructDeserializer struct() => _JsonMapDeserializer.struct(this, _getObject<Map<String, dynamic>>());
-
-  void _pushSource(JsonSource source) => _sources.addLast(source);
-  void _popSource() => _sources.removeLast();
+  StructDeserializer struct() => _JsonMapDeserializer.struct(this, currentValue<Map<String, dynamic>>());
 }
 
 class _JsonMapDeserializer<V> implements MapDeserializer<V>, StructDeserializer {
@@ -121,13 +110,11 @@ class _JsonMapDeserializer<V> implements MapDeserializer<V>, StructDeserializer 
   bool moveNext() => _entries.moveNext();
 
   @override
-  (String, V) entry() {
-    _context._pushSource(() => _entries.current.value);
-    final decoded = _valueEndec!.decode(_context);
-    _context._popSource();
-
-    return (_entries.current.key, decoded);
-  }
+  (String, V) entry() => _context.frame(
+        () => _entries.current.value,
+        () => (_entries.current.key, _valueEndec!.decode(_context)),
+        false,
+      );
 
   @override
   F field<F>(String name, Endec<F> endec) {
@@ -135,28 +122,24 @@ class _JsonMapDeserializer<V> implements MapDeserializer<V>, StructDeserializer 
       throw JsonDecodeException("Required Field $name is missing from serialized data");
     }
 
-    _context._pushSource(() => _map[name]!);
-    final decoded = endec.decode(_context);
-    _context._popSource();
-
-    return decoded;
+    return _context.frame(
+      () => _map[name]!,
+      () => endec.decode(_context),
+      true,
+    );
   }
 
   @override
   F optionalField<F>(String name, Endec<F> endec, F defaultValue) {
     if (!_map.containsKey(name)) {
-      if (defaultValue == null) {
-        throw JsonDecodeException("Field $name is missing from serialized data, but no default value was provided");
-      }
-
       return defaultValue;
     }
 
-    _context._pushSource(() => _map[name]!);
-    final decoded = endec.decode(_context);
-    _context._popSource();
-
-    return decoded;
+    return _context.frame(
+      () => _map[name]!,
+      () => endec.decode(_context),
+      true,
+    );
   }
 }
 
@@ -171,13 +154,11 @@ class _JsonSequenceDeserializer<V> implements SequenceDeserializer<V> {
   bool moveNext() => _entries.moveNext();
 
   @override
-  V element() {
-    _context._pushSource(() => _entries.current);
-    final decoded = _elementEndec.decode(_context);
-    _context._popSource();
-
-    return decoded;
-  }
+  V element() => _context.frame(
+        () => _entries.current,
+        () => _elementEndec.decode(_context),
+        false,
+      );
 }
 
 class JsonDecodeException implements Exception {

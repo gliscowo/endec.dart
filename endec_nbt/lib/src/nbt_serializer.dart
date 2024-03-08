@@ -1,4 +1,3 @@
-import 'dart:collection';
 import 'dart:typed_data';
 
 import 'package:endec/endec.dart';
@@ -11,23 +10,14 @@ NbtElement toNbt<T>(Endec<T> endec, T value) {
   return serializer.result;
 }
 
-typedef NbtSink = void Function(NbtElement nbtValue);
-
-class NbtSerializer implements Serializer {
+class NbtSerializer extends RecursiveSerializer {
   @override
   final bool selfDescribing = true;
 
-  final Queue<NbtSink> _sinks = Queue();
-  NbtElement? _result;
-
-  NbtSerializer() {
-    _sinks.add((nbtValue) => _result = nbtValue);
-  }
-
-  void _sink(NbtElement nbtValue) => _sinks.last(nbtValue);
+  NbtSerializer() : super(NbtCompound(const {}));
 
   @override
-  void boolean(bool value) => _sink(NbtByte(value ? 1 : 0));
+  void boolean(bool value) => consume(NbtByte(value ? 1 : 0));
   @override
   void optional<E>(Endec<E> endec, E? value) {
     final state = struct();
@@ -37,34 +27,34 @@ class NbtSerializer implements Serializer {
   }
 
   @override
-  void i8(int value) => _sink(NbtByte(value));
+  void i8(int value) => consume(NbtByte(value));
   @override
-  void u8(int value) => _sink(NbtByte(value));
+  void u8(int value) => consume(NbtByte(value));
 
   @override
-  void i16(int value) => _sink(NbtShort(value));
+  void i16(int value) => consume(NbtShort(value));
   @override
-  void u16(int value) => _sink(NbtShort(value));
+  void u16(int value) => consume(NbtShort(value));
 
   @override
-  void i32(int value) => _sink(NbtInt(value));
+  void i32(int value) => consume(NbtInt(value));
   @override
-  void u32(int value) => _sink(NbtInt(value));
+  void u32(int value) => consume(NbtInt(value));
 
   @override
-  void i64(int value) => _sink(NbtLong(value));
+  void i64(int value) => consume(NbtLong(value));
   @override
-  void u64(int value) => _sink(NbtLong(value));
+  void u64(int value) => consume(NbtLong(value));
 
   @override
-  void f32(double value) => _sink(NbtFloat(value));
+  void f32(double value) => consume(NbtFloat(value));
   @override
-  void f64(double value) => _sink(NbtDouble(value));
+  void f64(double value) => consume(NbtDouble(value));
 
   @override
-  void string(String value) => _sink(NbtString(value));
+  void string(String value) => consume(NbtString(value));
   @override
-  void bytes(Uint8List bytes) => _sink(NbtByteArray(Int8List.view(bytes.buffer)));
+  void bytes(Uint8List bytes) => consume(NbtByteArray(Int8List.view(bytes.buffer)));
 
   @override
   SequenceSerializer<E> sequence<E>(Endec<E> elementEndec, int length) => _NbtSequenceSerializer(this, elementEndec);
@@ -72,11 +62,6 @@ class NbtSerializer implements Serializer {
   MapSerializer<V> map<V>(Endec<V> valueEndec, int length) => _NbtMapSerializer.map(this, valueEndec);
   @override
   StructSerializer struct() => _NbtMapSerializer.struct(this);
-
-  NbtElement get result => _result ?? NbtCompound(const {});
-
-  void _pushSink(NbtSink sink) => _sinks.addLast(sink);
-  void _popSink() => _sinks.removeLast();
 }
 
 class _NbtMapSerializer<V> implements MapSerializer<V>, StructSerializer {
@@ -88,24 +73,25 @@ class _NbtMapSerializer<V> implements MapSerializer<V>, StructSerializer {
   _NbtMapSerializer.struct(this._context) : _valueEndec = null;
 
   @override
-  void entry(String key, V value) => _kvPair(key, _valueEndec!, value);
-  @override
-  void field<F, _V extends F>(String key, Endec<F> endec, _V value) => _kvPair(key, endec, value);
-
-  void _kvPair<T>(String key, Endec<T> endec, T value) {
-    NbtElement? encodedValue;
-    void sink(NbtElement nbtValue) => encodedValue = nbtValue;
-
-    _context._pushSink(sink);
-    endec.encode(_context, value);
-    _context._popSink();
-
-    if (encodedValue == null) throw NbtEncodeError("Endec for NBT Compound value encoded nothing");
-    _result[key] = encodedValue!;
-  }
+  void entry(String key, V value) => _context.frame(
+        (holder) {
+          _valueEndec!.encode(_context, value);
+          _result[key] = holder.require("map value");
+        },
+        false,
+      );
 
   @override
-  void end() => _context._sink(NbtCompound(_result));
+  void field<F, _V extends F>(String key, Endec<F> endec, _V value) => _context.frame(
+        (holder) {
+          endec.encode(_context, value);
+          _result[key] = holder.require("struct field");
+        },
+        true,
+      );
+
+  @override
+  void end() => _context.consume(NbtCompound(_result));
 }
 
 class _NbtSequenceSerializer<V> implements SequenceSerializer<V> {
@@ -116,20 +102,16 @@ class _NbtSequenceSerializer<V> implements SequenceSerializer<V> {
   _NbtSequenceSerializer(this._context, this._elementEndec);
 
   @override
-  void element(V value) {
-    NbtElement? encodedValue;
-    void sink(NbtElement nbtValue) => encodedValue = nbtValue;
-
-    _context._pushSink(sink);
-    _elementEndec.encode(_context, value);
-    _context._popSink();
-
-    if (encodedValue == null) throw NbtEncodeError("No value was serialized");
-    _result.add(encodedValue!);
-  }
+  void element(V value) => _context.frame(
+        (holder) {
+          _elementEndec.encode(_context, value);
+          _result.add(holder.require("sequence element"));
+        },
+        false,
+      );
 
   @override
-  void end() => _context._sink(NbtList(_result));
+  void end() => _context.consume(NbtList(_result));
 }
 
 class NbtEncodeError extends Error {

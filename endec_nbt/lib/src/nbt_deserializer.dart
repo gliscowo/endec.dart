@@ -1,4 +1,3 @@
-import 'dart:collection';
 import 'dart:typed_data';
 
 import 'package:endec/endec.dart';
@@ -10,20 +9,10 @@ T fromNbt<T>(Endec<T> endec, NbtElement nbt) {
   return endec.decode(deserializer);
 }
 
-typedef NbtSource = NbtElement Function();
-
-class NbtDeserializer implements SelfDescribingDeserializer {
-  final Queue<NbtSource> _sources = Queue();
-  final NbtElement _serialized;
-
-  NbtDeserializer(this._serialized) {
-    _sources.add(() => _serialized);
-  }
-
-  E _getElement<E extends NbtElement>() => _sources.last() as E;
-
+class NbtDeserializer extends RecursiveDeserializer<NbtElement> implements SelfDescribingDeserializer {
+  NbtDeserializer(super._serialized);
   @override
-  void any(Serializer visitor) => _decodeElement(visitor, _getElement());
+  void any(Serializer visitor) => _decodeElement(visitor, currentValue());
   void _decodeElement(Serializer visitor, NbtElement element) {
     switch (element.type) {
       case NbtElementType.byte:
@@ -84,7 +73,7 @@ class NbtDeserializer implements SelfDescribingDeserializer {
   }
 
   @override
-  bool boolean() => _getElement<NbtByte>().value == 1;
+  bool boolean() => currentValue<NbtByte>().value == 1;
   @override
   E? optional<E>(Endec<E> endec) {
     final state = struct();
@@ -92,46 +81,43 @@ class NbtDeserializer implements SelfDescribingDeserializer {
   }
 
   @override
-  int i8() => _getElement<NbtByte>().value;
+  int i8() => currentValue<NbtByte>().value;
   @override
-  int u8() => _getElement<NbtByte>().value;
+  int u8() => currentValue<NbtByte>().value;
 
   @override
-  int i16() => _getElement<NbtShort>().value;
+  int i16() => currentValue<NbtShort>().value;
   @override
-  int u16() => _getElement<NbtShort>().value;
+  int u16() => currentValue<NbtShort>().value;
 
   @override
-  int i32() => _getElement<NbtInt>().value;
+  int i32() => currentValue<NbtInt>().value;
   @override
-  int u32() => _getElement<NbtInt>().value;
+  int u32() => currentValue<NbtInt>().value;
 
   @override
-  int i64() => _getElement<NbtLong>().value;
+  int i64() => currentValue<NbtLong>().value;
   @override
-  int u64() => _getElement<NbtLong>().value;
+  int u64() => currentValue<NbtLong>().value;
 
   @override
-  double f32() => _getElement<NbtFloat>().value;
+  double f32() => currentValue<NbtFloat>().value;
   @override
-  double f64() => _getElement<NbtDouble>().value;
+  double f64() => currentValue<NbtDouble>().value;
 
   @override
-  String string() => _getElement<NbtString>().value;
+  String string() => currentValue<NbtString>().value;
   @override
-  Uint8List bytes() => Uint8List.view(_getElement<NbtByteArray>().value.buffer);
+  Uint8List bytes() => Uint8List.view(currentValue<NbtByteArray>().value.buffer);
 
   @override
   SequenceDeserializer<E> sequence<E>(Endec<E> elementEndec) =>
-      _NbtSequenceDeserializer(this, elementEndec, _getElement<NbtList>());
+      _NbtSequenceDeserializer(this, elementEndec, currentValue<NbtList>());
   @override
   MapDeserializer<V> map<V>(Endec<V> valueEndec) =>
-      _NbtMapDeserializer.map(this, valueEndec, _getElement<NbtCompound>());
+      _NbtMapDeserializer.map(this, valueEndec, currentValue<NbtCompound>());
   @override
-  StructDeserializer struct() => _NbtMapDeserializer.struct(this, _getElement<NbtCompound>());
-
-  void _pushSource(NbtSource source) => _sources.addLast(source);
-  void _popSource() => _sources.removeLast();
+  StructDeserializer struct() => _NbtMapDeserializer.struct(this, currentValue<NbtCompound>());
 }
 
 class _NbtMapDeserializer<V> implements MapDeserializer<V>, StructDeserializer {
@@ -155,13 +141,11 @@ class _NbtMapDeserializer<V> implements MapDeserializer<V>, StructDeserializer {
   bool moveNext() => _entries.moveNext();
 
   @override
-  (String, V) entry() {
-    _context._pushSource(() => _entries.current.value);
-    final decoded = _valueEndec!.decode(_context);
-    _context._popSource();
-
-    return (_entries.current.key, decoded);
-  }
+  (String, V) entry() => _context.frame(
+        () => _entries.current.value,
+        () => (_entries.current.key, _valueEndec!.decode(_context)),
+        false,
+      );
 
   @override
   F field<F>(String name, Endec<F> endec) {
@@ -169,28 +153,24 @@ class _NbtMapDeserializer<V> implements MapDeserializer<V>, StructDeserializer {
       throw NbtDecodeException("Required field $name is missing from serialized data");
     }
 
-    _context._pushSource(() => _map[name]!);
-    final decoded = endec.decode(_context);
-    _context._popSource();
-
-    return decoded;
+    return _context.frame(
+      () => _map[name]!,
+      () => endec.decode(_context),
+      true,
+    );
   }
 
   @override
   F optionalField<F>(String name, Endec<F> endec, F defaultValue) {
     if (!_map.containsKey(name)) {
-      if (defaultValue == null) {
-        throw NbtDecodeException("Field $name is missing from serialized data, but no default value was provided");
-      }
-
       return defaultValue;
     }
 
-    _context._pushSource(() => _map[name]!);
-    final decoded = endec.decode(_context);
-    _context._popSource();
-
-    return decoded;
+    return _context.frame(
+      () => _map[name]!,
+      () => endec.decode(_context),
+      true,
+    );
   }
 }
 
@@ -205,13 +185,11 @@ class _NbtSequenceDeserializer<V> implements SequenceDeserializer<V> {
   bool moveNext() => _entries.moveNext();
 
   @override
-  V element() {
-    _context._pushSource(() => _entries.current);
-    final decoded = _elementEndec.decode(_context);
-    _context._popSource();
-
-    return decoded;
-  }
+  V element() => _context.frame(
+        () => _entries.current,
+        () => _elementEndec.decode(_context),
+        false,
+      );
 }
 
 class NbtDecodeException implements Exception {
