@@ -30,6 +30,9 @@ abstract class StructEndec<S> with Endec<S> {
   @override
   S decode(Deserializer deserializer) => decodeStruct(deserializer.struct());
 
+  @override
+  StructEndec<U> xmap<U>(U Function(S self) to, S Function(U other) from) => _XmapStructEndec(this, to, from);
+
   StructField<M, S> flatFieldOf<M>(S Function(M struct) getter) => StructField.flat(this, getter);
 }
 
@@ -43,6 +46,19 @@ class _SimpleStructEndec<S> extends StructEndec<S> {
 
   @override
   S decodeStruct(StructDeserializer struct) => _decoder(struct);
+}
+
+class _XmapStructEndec<T, U> extends StructEndec<U> {
+  final StructEndec<T> _sourceEndec;
+  final U Function(T) _to;
+  final T Function(U) _from;
+
+  _XmapStructEndec(this._sourceEndec, this._to, this._from);
+
+  @override
+  void encodeStruct(StructSerializer struct, U value) => _sourceEndec.encodeStruct(struct, _from(value));
+  @override
+  U decodeStruct(StructDeserializer struct) => _to(_sourceEndec.decodeStruct(struct));
 }
 
 abstract final class StructField<S, F> {
@@ -86,16 +102,16 @@ final class _GenericStructField<S, F> implements StructField<S, F> {
       : struct.field(_name, _endec);
 }
 
-final class _FlatStructField<S, M> implements StructField<S, M> {
-  final StructEndec<M> _endec;
-  final M Function(S) _getter;
+final class _FlatStructField<S, F> implements StructField<S, F> {
+  final StructEndec<F> _endec;
+  final F Function(S) _getter;
 
   _FlatStructField(this._endec, this._getter);
 
   @override
   void encodeField(StructSerializer struct, S instance) => _endec.encodeStruct(struct, _getter(instance));
   @override
-  M decodeField(StructDeserializer struct) => _endec.decodeStruct(struct);
+  F decodeField(StructDeserializer struct) => _endec.decodeStruct(struct);
 }
 
 StructEndecBuilder<S> structEndec<S>() => StructEndecBuilder._();
