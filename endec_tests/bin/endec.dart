@@ -37,7 +37,7 @@ class MyEpicStruct {
   static final Endec<MyEpicStruct> endec = structEndec<MyEpicStruct>().with3Fields(
     Endec.string.fieldOf("a_field", (struct) => struct.aField),
     Endec.int.fieldOf("another_field", (struct) => struct.anotherField),
-    Endec.double.listOf().mapOf().optionalFieldOf("map_field", (struct) => struct.mapField, {}),
+    Endec.double.listOf().mapOf().fieldOf("map_field", (struct) => struct.mapField, defaultValueFactory: () => {}),
     MyEpicStruct.new,
   );
 

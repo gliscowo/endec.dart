@@ -161,9 +161,9 @@ class _NbtMapDeserializer<V> implements MapDeserializer<V>, StructDeserializer {
   }
 
   @override
-  F optionalField<F>(String name, Endec<F> endec, F defaultValue) {
+  F optionalField<F>(String name, Endec<F> endec, F Function() defaultValueFactory) {
     if (!_map.containsKey(name)) {
-      return defaultValue;
+      return defaultValueFactory();
     }
 
     return _context.frame(

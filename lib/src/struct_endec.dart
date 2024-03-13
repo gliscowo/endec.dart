@@ -4,10 +4,10 @@ import 'package:endec/src/serializer.dart';
 import 'endec_base.dart';
 
 extension Field<F> on Endec<F> {
-  StructField<S, F> fieldOf<S>(String name, F Function(S struct) getter) => StructField.required(name, this, getter);
-
-  StructField<S, F> optionalFieldOf<S>(String name, F Function(S struct) getter, F defaultValue) =>
-      StructField.optional(name, this, getter, defaultValue);
+  StructField<S, F> fieldOf<S>(String name, F Function(S struct) getter, {F Function()? defaultValueFactory}) =>
+      defaultValueFactory != null
+          ? StructField.optional(name, this, getter, defaultValueFactory)
+          : StructField.required(name, this, getter);
 }
 
 typedef StructEncoder<S> = void Function(StructSerializer struct, S value);
@@ -30,7 +30,7 @@ abstract class StructEndec<S> with Endec<S> {
   @override
   S decode(Deserializer deserializer) => decodeStruct(deserializer.struct());
 
-  StructField<M, S> flatFieldOf<M>(S Function(M struct) getter) => FlatStructField.required(this, getter);
+  StructField<M, S> flatFieldOf<M>(S Function(M struct) getter) => StructField.flat(this, getter);
 }
 
 class _SimpleStructEndec<S> extends StructEndec<S> {
@@ -45,29 +45,52 @@ class _SimpleStructEndec<S> extends StructEndec<S> {
   S decodeStruct(StructDeserializer struct) => _decoder(struct);
 }
 
-final class StructField<S, F> {
-  final String _name;
-  final Endec<F> _endec;
-  final F Function(S struct) _getter;
+abstract final class StructField<S, F> {
+  factory StructField.required(
+    String name,
+    Endec<F> endec,
+    F Function(S struct) getter,
+  ) = _GenericStructField.required;
 
-  final bool _required;
-  final F? _defaultValue;
+  factory StructField.optional(
+    String name,
+    Endec<F> endec,
+    F Function(S struct) getter,
+    F Function() defaultValueFactory,
+  ) = _GenericStructField.optional;
 
-  StructField.required(this._name, this._endec, this._getter)
-      : _required = true,
-        _defaultValue = null;
-  StructField.optional(this._name, this._endec, this._getter, F this._defaultValue) : _required = false;
+  factory StructField.flat(
+    StructEndec<F> endec,
+    F Function(S struct) getter,
+  ) = _FlatStructField.new;
 
-  void encodeField(StructSerializer struct, S instance) => struct.field(_name, _endec, _getter(instance));
-  F decodeField(StructDeserializer struct) =>
-      _required ? struct.field(_name, _endec) : struct.optionalField(_name, _endec, _defaultValue as F);
+  void encodeField(StructSerializer struct, S instance);
+  F decodeField(StructDeserializer struct);
 }
 
-final class FlatStructField<S, M> extends StructField<S, M> {
-  FlatStructField.required(StructEndec<M> endec, M Function(S) getter) : super.required("", endec, getter);
+final class _GenericStructField<S, F> implements StructField<S, F> {
+  final String _name;
+  final Endec<F> _endec;
+  final F Function(S) _getter;
+  final F Function()? _defaultValueFactory;
+
+  _GenericStructField.required(this._name, this._endec, this._getter) : _defaultValueFactory = null;
+  _GenericStructField.optional(this._name, this._endec, this._getter, this._defaultValueFactory);
 
   @override
-  StructEndec<M> get _endec => super._endec as StructEndec<M>;
+  void encodeField(StructSerializer struct, S instance) => struct.field(_name, _endec, _getter(instance));
+
+  @override
+  F decodeField(StructDeserializer struct) => _defaultValueFactory != null
+      ? struct.optionalField(_name, _endec, _defaultValueFactory!)
+      : struct.field(_name, _endec);
+}
+
+final class _FlatStructField<S, M> implements StructField<S, M> {
+  final StructEndec<M> _endec;
+  final M Function(S) _getter;
+
+  _FlatStructField(this._endec, this._getter);
 
   @override
   void encodeField(StructSerializer struct, S instance) => _endec.encodeStruct(struct, _getter(instance));
