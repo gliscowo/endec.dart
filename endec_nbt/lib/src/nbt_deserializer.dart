@@ -34,11 +34,7 @@ class NbtDeserializer extends RecursiveDeserializer<NbtElement> implements SelfD
       case NbtElementType.intArray:
         final list = (element as NbtIntArray).value;
 
-        var state = visitor.sequence(
-          Endec<int>.of((serializer, value) => serializer.i32(value), (deserializer) => deserializer.i32()),
-          list.length,
-        );
-
+        var state = visitor.sequence(Endec.i32, list.length);
         for (final element in list) {
           state.element(element);
         }
@@ -46,7 +42,7 @@ class NbtDeserializer extends RecursiveDeserializer<NbtElement> implements SelfD
       case NbtElementType.longArray:
         final list = (element as NbtLongArray).value;
 
-        var state = visitor.sequence(Endec.int, list.length);
+        var state = visitor.sequence(Endec.i64, list.length);
         for (final element in list) {
           state.element(element);
         }

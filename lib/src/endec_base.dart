@@ -2,17 +2,32 @@ import 'deserializer.dart';
 import 'serializer.dart';
 import 'struct_endec.dart';
 
-typedef Int = int;
-typedef Double = double;
 typedef Bool = bool;
 
 typedef Encoder<T> = void Function(Serializer serializer, T value);
 typedef Decoder<T> = T Function(Deserializer deserializer);
 
 abstract mixin class Endec<T> {
-  static final Endec<Int> int =
+  static final Endec<int> i8 =
+      Endec.of((serializer, value) => serializer.i8(value), (deserializer) => deserializer.i8());
+  static final Endec<int> u8 =
+      Endec.of((serializer, value) => serializer.u8(value), (deserializer) => deserializer.u8());
+  static final Endec<int> i16 =
+      Endec.of((serializer, value) => serializer.i16(value), (deserializer) => deserializer.i16());
+  static final Endec<int> u16 =
+      Endec.of((serializer, value) => serializer.u16(value), (deserializer) => deserializer.u16());
+  static final Endec<int> i32 =
+      Endec.of((serializer, value) => serializer.i32(value), (deserializer) => deserializer.i32());
+  static final Endec<int> u32 =
+      Endec.of((serializer, value) => serializer.u32(value), (deserializer) => deserializer.u32());
+  static final Endec<int> i64 =
       Endec.of((serializer, value) => serializer.i64(value), (deserializer) => deserializer.i64());
-  static final Endec<Double> double =
+  static final Endec<int> u64 =
+      Endec.of((serializer, value) => serializer.u64(value), (deserializer) => deserializer.u64());
+
+  static final Endec<double> f32 =
+      Endec.of((serializer, value) => serializer.f32(value), (deserializer) => deserializer.f32());
+  static final Endec<double> f64 =
       Endec.of((serializer, value) => serializer.f64(value), (deserializer) => deserializer.f64());
   static final Endec<Bool> bool =
       Endec.of((serializer, value) => serializer.boolean(value), (deserializer) => deserializer.boolean());

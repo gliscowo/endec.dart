@@ -6,7 +6,7 @@ import 'package:endec_json/endec_json.dart';
 abstract class ParentClass {
   static final fieldsEndec = structEndec<(String, int)>().with2Fields(
     Endec.string.fieldOf("a_field", (tuple) => tuple.$1),
-    Endec.int.fieldOf("another_field", (tuple) => tuple.$2),
+    Endec.i64.fieldOf("another_field", (tuple) => tuple.$2),
     (p0, p1) => (p0, p1),
   );
 
@@ -19,7 +19,7 @@ abstract class ParentClass {
 class ChildClass extends ParentClass {
   static final endec = structEndec<ChildClass>().with2Fields(
     ParentClass.fieldsEndec.flatFieldOf((struct) => (struct.aField, struct.anotherField)),
-    Endec.double.listOf().fieldOf("third_field", (struct) => struct.thirdField),
+    Endec.f64.listOf().fieldOf("third_field", (struct) => struct.thirdField),
     (p0, p1) => ChildClass(p0.$1, p0.$2, p1),
   );
 

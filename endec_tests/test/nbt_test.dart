@@ -44,7 +44,7 @@ void main() {
 
   test('omit optional field during encoding / read default during decoding', () {
     final endec = structEndec<(int?,)>().with1Field(
-        Endec.int.optionalOf().fieldOf("field", (struct) => struct.$1, defaultValueFactory: () => 0), (p0) => (p0,));
+        Endec.i64.optionalOf().fieldOf("field", (struct) => struct.$1, defaultValueFactory: () => 0), (p0) => (p0,));
 
     expect(toNbt(endec, (null,)), NbtCompound(const {}));
     expect(fromNbt(endec, NbtCompound(const {})), (0,));
@@ -52,10 +52,10 @@ void main() {
 
   test('flatten present optional in optional field value', () {
     final optionalFieldEndec = structEndec<(int?,)>().with1Field(
-        Endec.int.optionalOf().fieldOf("field", (struct) => struct.$1, defaultValueFactory: () => 0), (p0) => (p0,));
+        Endec.i64.optionalOf().fieldOf("field", (struct) => struct.$1, defaultValueFactory: () => 0), (p0) => (p0,));
 
     final requiredFieldEndec = structEndec<(int?,)>()
-        .with1Field(Endec.int.optionalOf().fieldOf("field", (struct) => struct.$1), (p0) => (p0,));
+        .with1Field(Endec.i64.optionalOf().fieldOf("field", (struct) => struct.$1), (p0) => (p0,));
 
     expect(toNbt(optionalFieldEndec, (7,)), const NbtCompound({"field": NbtLong(7)}));
     expect(

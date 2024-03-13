@@ -10,7 +10,7 @@ void main() {
   final jsonEncoder = const JsonEncoder.withIndent("  ");
 
   test('xmap string to codepoints', () {
-    final codepointEndec = Endec.int.listOf().xmap(String.fromCharCodes, (other) => other.codeUnits);
+    final codepointEndec = Endec.u16.listOf().xmap(String.fromCharCodes, (other) => other.codeUnits);
 
     final serialized = jsonEncoder.convert(toJson(codepointEndec, "a string"));
     print(serialized);

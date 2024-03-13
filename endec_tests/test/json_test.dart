@@ -13,7 +13,7 @@ void main() {
     var endec = structEndec<_Struct>().with4Fields(
       Endec.string.fieldOf("a_field", (struct) => struct.aField),
       Endec.string.mapOf().fieldOf("a_nested_field", (struct) => struct.aNestedField),
-      Endec.double.listOf().fieldOf("list_moment", (struct) => struct.listMoment),
+      Endec.f64.listOf().fieldOf("list_moment", (struct) => struct.listMoment),
       Endec.string.fieldOf("another_field", (struct) => struct.anotherField),
       _Struct.new,
     );
@@ -48,7 +48,7 @@ void main() {
 
   test('omit optional field during encoding / read default during decoding', () {
     final endec = structEndec<(int?,)>().with1Field(
-        Endec.int.optionalOf().fieldOf("field", (struct) => struct.$1, defaultValueFactory: () => 0), (p0) => (p0,));
+        Endec.i64.optionalOf().fieldOf("field", (struct) => struct.$1, defaultValueFactory: () => 0), (p0) => (p0,));
 
     expect(toJson(endec, (null,)), <String, dynamic>{});
     expect(fromJson(endec, <String, dynamic>{}), (0,));
