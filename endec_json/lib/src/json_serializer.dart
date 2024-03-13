@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:endec/endec.dart';
 
-Object toJson<T>(Endec<T> endec, T value) {
+Object toJson<T, S extends T>(Endec<T> endec, S value) {
   final serializer = JsonSerializer();
   endec.encode(serializer, value);
   return serializer.result;

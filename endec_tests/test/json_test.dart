@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   test('encode string', () {
     var value = "an epic string";
-    var result = toJson<String>(Endec.string, value);
+    var result = toJson(Endec.string, value);
     print("Result: $result, Type: ${result.runtimeType}");
   });
 

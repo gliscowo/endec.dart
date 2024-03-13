@@ -4,7 +4,7 @@ import 'package:endec/endec.dart';
 
 import 'nbt_types.dart';
 
-NbtElement toNbt<T>(Endec<T> endec, T value) {
+NbtElement toNbt<T, S extends T>(Endec<T> endec, S value) {
   final serializer = NbtSerializer();
   endec.encode(serializer, value);
   return serializer.result;

@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import 'package:endec/endec.dart';
 
-Uint8List toBinary<T>(Endec<T> endec, T value) {
+Uint8List toBinary<T, S extends T>(Endec<T> endec, S value) {
   final serializer = BinarySerializer();
   endec.encode(serializer, value);
 
