@@ -3,9 +3,6 @@ import 'dart:typed_data';
 import 'endec_base.dart';
 
 abstract interface class Serializer {
-  void boolean(bool value);
-  void optional<E>(Endec<E> endec, E? value);
-
   void i8(int value);
   void u8(int value);
 
@@ -21,8 +18,10 @@ abstract interface class Serializer {
   void f32(double value);
   void f64(double value);
 
+  void boolean(bool value);
   void string(String value);
   void bytes(Uint8List bytes);
+  void optional<E>(Endec<E> endec, E? value);
 
   SequenceSerializer<E> sequence<E>(Endec<E> elementEndec, int length);
   MapSerializer<V> map<V>(Endec<V> valueEndec, int length);
@@ -42,6 +41,6 @@ abstract interface class MapSerializer<V> {
 }
 
 abstract interface class StructSerializer {
-  void field<F, V extends F>(String name, Endec<F> endec, V value);
+  void field<F, V extends F>(String name, Endec<F> endec, V value, {bool optional = false});
   void end();
 }

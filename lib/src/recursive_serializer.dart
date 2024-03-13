@@ -3,25 +3,25 @@ import 'dart:collection';
 import 'package:endec/endec.dart';
 import 'package:meta/meta.dart';
 
-typedef _Frame<T> = ({void Function(T) sink, bool isStructField});
+typedef _Frame<T> = ({void Function(T) sink, bool isOptionalStructField});
 
 abstract class RecursiveSerializer<T> implements Serializer {
   final Queue<_Frame<T>> _frames = Queue();
   T _result;
 
   RecursiveSerializer(this._result) {
-    _frames.add((sink: (t) => _result = t, isStructField: false));
+    _frames.add((sink: (t) => _result = t, isOptionalStructField: false));
   }
 
   @protected
-  bool get isWritingStructField => _frames.last.isStructField;
+  bool get isWritingOptionalStructField => _frames.last.isOptionalStructField;
 
   void consume(T value) => _frames.last.sink(value);
 
-  void frame(void Function(EncodedValue<T> holder) action, bool isStructField) {
+  void frame(void Function(EncodedValue<T> holder) action, {bool isOptionalStructField = false}) {
     final holder = EncodedValue<T>();
 
-    _frames.add((sink: holder._set, isStructField: isStructField));
+    _frames.add((sink: holder._set, isOptionalStructField: isOptionalStructField));
     action(holder);
     _frames.removeLast();
   }

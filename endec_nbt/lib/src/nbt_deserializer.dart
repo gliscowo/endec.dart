@@ -73,14 +73,6 @@ class NbtDeserializer extends RecursiveDeserializer<NbtElement> implements SelfD
   }
 
   @override
-  bool boolean() => currentValue<NbtByte>().value == 1;
-  @override
-  E? optional<E>(Endec<E> endec) {
-    final state = struct();
-    return state.field("present", Endec.bool) ? state.field("value", endec) : null;
-  }
-
-  @override
   int i8() => currentValue<NbtByte>().value;
   @override
   int u8() => currentValue<NbtByte>().value;
@@ -106,9 +98,16 @@ class NbtDeserializer extends RecursiveDeserializer<NbtElement> implements SelfD
   double f64() => currentValue<NbtDouble>().value;
 
   @override
+  bool boolean() => currentValue<NbtByte>().value == 1;
+  @override
   String string() => currentValue<NbtString>().value;
   @override
   Uint8List bytes() => Uint8List.view(currentValue<NbtByteArray>().value.buffer);
+  @override
+  E? optional<E>(Endec<E> endec) {
+    final state = struct();
+    return state.field("present", Endec.bool) ? state.field("value", endec) : null;
+  }
 
   @override
   SequenceDeserializer<E> sequence<E>(Endec<E> elementEndec) =>

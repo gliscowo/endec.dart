@@ -45,6 +45,14 @@ void main() {
     var encoded = toJson(jsonEndec, json);
     expect(json, encoded);
   });
+
+  test('omit optional field during encoding / read default during decoding', () {
+    final endec = structEndec<(int?,)>().with1Field(
+        Endec.int.optionalOf().fieldOf("field", (struct) => struct.$1, defaultValueFactory: () => 0), (p0) => (p0,));
+
+    expect(toJson(endec, (null,)), <String, dynamic>{});
+    expect(fromJson(endec, <String, dynamic>{}), (0,));
+  });
 }
 
 class _Struct {

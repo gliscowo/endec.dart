@@ -12,11 +12,6 @@ class BinaryDeserializer implements Deserializer {
   BinaryDeserializer(this._buffer);
 
   @override
-  bool boolean() => u8() != 0;
-  @override
-  E? optional<E>(Endec<E> endec) => boolean() ? endec.decode(this) : null;
-
-  @override
   int i8() => _read((idx, _) => _buffer.getInt8(idx), 1);
   @override
   int u8() => _read((idx, _) => _buffer.getUint8(idx), 1);
@@ -49,9 +44,13 @@ class BinaryDeserializer implements Deserializer {
   }
 
   @override
+  bool boolean() => u8() != 0;
+  @override
   String string() => utf8.decode(_readBytes());
   @override
   Uint8List bytes() => _readBytes();
+  @override
+  E? optional<E>(Endec<E> endec) => boolean() ? endec.decode(this) : null;
 
   Uint8List _readBytes() {
     final length = i32();

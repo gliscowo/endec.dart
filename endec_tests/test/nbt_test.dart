@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:endec/endec.dart';
 import 'package:endec_nbt/endec_nbt.dart';
 import 'package:path/path.dart';
 import 'package:test/test.dart';
@@ -39,5 +40,28 @@ void main() {
       binaryToNbt(asset(const ["bigtest.nbt"]).readAsBytesSync(), compressed: true),
       snbtToNbt(asset(const ["bigtest.snbt"]).readAsStringSync()),
     );
+  });
+
+  test('omit optional field during encoding / read default during decoding', () {
+    final endec = structEndec<(int?,)>().with1Field(
+        Endec.int.optionalOf().fieldOf("field", (struct) => struct.$1, defaultValueFactory: () => 0), (p0) => (p0,));
+
+    expect(toNbt(endec, (null,)), NbtCompound(const {}));
+    expect(fromNbt(endec, NbtCompound(const {})), (0,));
+  });
+
+  test('flatten present optional in optional field value', () {
+    final optionalFieldEndec = structEndec<(int?,)>().with1Field(
+        Endec.int.optionalOf().fieldOf("field", (struct) => struct.$1, defaultValueFactory: () => 0), (p0) => (p0,));
+
+    final requiredFieldEndec = structEndec<(int?,)>()
+        .with1Field(Endec.int.optionalOf().fieldOf("field", (struct) => struct.$1), (p0) => (p0,));
+
+    expect(toNbt(optionalFieldEndec, (7,)), NbtCompound({"field": NbtLong(7)}));
+    expect(
+        toNbt(requiredFieldEndec, (7,)),
+        NbtCompound({
+          "field": NbtCompound({"present": NbtByte(1), "value": NbtLong(7)})
+        }));
   });
 }

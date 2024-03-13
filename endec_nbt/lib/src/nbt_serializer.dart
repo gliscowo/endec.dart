@@ -17,16 +17,6 @@ class NbtSerializer extends RecursiveSerializer {
   NbtSerializer() : super(NbtCompound(const {}));
 
   @override
-  void boolean(bool value) => consume(NbtByte(value ? 1 : 0));
-  @override
-  void optional<E>(Endec<E> endec, E? value) {
-    final state = struct();
-    state.field("present", Endec.bool, value != null);
-    if (value != null) state.field("value", endec, value);
-    state.end();
-  }
-
-  @override
   void i8(int value) => consume(NbtByte(value));
   @override
   void u8(int value) => consume(NbtByte(value));
@@ -52,9 +42,23 @@ class NbtSerializer extends RecursiveSerializer {
   void f64(double value) => consume(NbtDouble(value));
 
   @override
+  void boolean(bool value) => consume(NbtByte(value ? 1 : 0));
+  @override
   void string(String value) => consume(NbtString(value));
   @override
   void bytes(Uint8List bytes) => consume(NbtByteArray(Int8List.view(bytes.buffer)));
+  @override
+  void optional<E>(Endec<E> endec, E? value) {
+    if (isWritingOptionalStructField) {
+      if (value == null) return;
+      endec.encode(this, value);
+    } else {
+      final state = struct();
+      state.field("present", Endec.bool, value != null);
+      if (value != null) state.field("value", endec, value);
+      state.end();
+    }
+  }
 
   @override
   SequenceSerializer<E> sequence<E>(Endec<E> elementEndec, int length) => _NbtSequenceSerializer(this, elementEndec);
@@ -73,21 +77,20 @@ class _NbtMapSerializer<V> implements MapSerializer<V>, StructSerializer {
   _NbtMapSerializer.struct(this._context) : _valueEndec = null;
 
   @override
-  void entry(String key, V value) => _context.frame(
-        (holder) {
-          _valueEndec!.encode(_context, value);
-          _result[key] = holder.require("map value");
-        },
-        false,
-      );
+  void entry(String key, V value) => _context.frame((holder) {
+        _valueEndec!.encode(_context, value);
+        _result[key] = holder.require("map value");
+      });
 
   @override
-  void field<F, _V extends F>(String key, Endec<F> endec, _V value) => _context.frame(
+  void field<F, _V extends F>(String key, Endec<F> endec, _V value, {bool optional = false}) => _context.frame(
         (holder) {
           endec.encode(_context, value);
+
+          if (optional && !holder.wasEncoded) return;
           _result[key] = holder.require("struct field");
         },
-        true,
+        isOptionalStructField: optional,
       );
 
   @override
@@ -102,13 +105,10 @@ class _NbtSequenceSerializer<V> implements SequenceSerializer<V> {
   _NbtSequenceSerializer(this._context, this._elementEndec);
 
   @override
-  void element(V value) => _context.frame(
-        (holder) {
-          _elementEndec.encode(_context, value);
-          _result.add(holder.require("sequence element"));
-        },
-        false,
-      );
+  void element(V value) => _context.frame((holder) {
+        _elementEndec.encode(_context, value);
+        _result.add(holder.require("sequence element"));
+      });
 
   @override
   void end() => _context.consume(NbtList(_result));

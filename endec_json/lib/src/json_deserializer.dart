@@ -47,11 +47,6 @@ class JsonDeserializer extends RecursiveDeserializer<Object?> implements SelfDes
   }
 
   @override
-  bool boolean() => currentValue();
-  @override
-  E? optional<E>(Endec<E> endec) => currentValue() != null ? endec.decode(this) : null;
-
-  @override
   int i8() => currentValue();
   @override
   int u8() => currentValue();
@@ -77,9 +72,13 @@ class JsonDeserializer extends RecursiveDeserializer<Object?> implements SelfDes
   double f64() => currentValue();
 
   @override
+  bool boolean() => currentValue();
+  @override
   String string() => currentValue();
   @override
   Uint8List bytes() => Uint8List.fromList(currentValue<List<dynamic>>().cast<int>());
+  @override
+  E? optional<E>(Endec<E> endec) => currentValue() != null ? endec.decode(this) : null;
 
   @override
   SequenceDeserializer<E> sequence<E>(Endec<E> elementEndec) =>

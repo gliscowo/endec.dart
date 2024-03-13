@@ -15,17 +15,6 @@ class JsonSerializer extends RecursiveSerializer<Object?> implements Serializer 
   JsonSerializer() : super(null);
 
   @override
-  void boolean(bool value) => consume(value);
-  @override
-  void optional<E>(Endec<E> endec, E? value) {
-    if (value != null) {
-      endec.encode(this, value);
-    } else {
-      consume(null);
-    }
-  }
-
-  @override
   void i8(int value) => consume(value);
   @override
   void u8(int value) => consume(value);
@@ -51,9 +40,19 @@ class JsonSerializer extends RecursiveSerializer<Object?> implements Serializer 
   void f64(double value) => consume(value);
 
   @override
+  void boolean(bool value) => consume(value);
+  @override
   void string(String value) => consume(value);
   @override
   void bytes(Uint8List bytes) => consume(bytes);
+  @override
+  void optional<E>(Endec<E> endec, E? value) {
+    if (value != null) {
+      endec.encode(this, value);
+    } else if (!isWritingOptionalStructField) {
+      consume(null);
+    }
+  }
 
   @override
   SequenceSerializer<E> sequence<E>(Endec<E> elementEndec, int length) => _JsonSequenceSerializer(this, elementEndec);
@@ -75,21 +74,20 @@ class _JsonMapSerializer<V> implements MapSerializer<V>, StructSerializer {
   _JsonMapSerializer.struct(this._context) : _valueEndec = null;
 
   @override
-  void entry(String key, V value) => _context.frame(
-        (holder) {
-          _valueEndec!.encode(_context, value);
-          _result[key] = holder.require("map value");
-        },
-        false,
-      );
+  void entry(String key, V value) => _context.frame((holder) {
+        _valueEndec!.encode(_context, value);
+        _result[key] = holder.require("map value");
+      });
 
   @override
-  void field<F, _V extends F>(String key, Endec<F> endec, _V value) => _context.frame(
+  void field<F, _V extends F>(String key, Endec<F> endec, _V value, {bool optional = false}) => _context.frame(
         (holder) {
           endec.encode(_context, value);
+
+          if (optional && !holder.wasEncoded) return;
           _result[key] = holder.require("struct field");
         },
-        true,
+        isOptionalStructField: optional,
       );
 
   @override
@@ -104,13 +102,10 @@ class _JsonSequenceSerializer<V> implements SequenceSerializer<V> {
   _JsonSequenceSerializer(this._context, this._elementEndec);
 
   @override
-  void element(V value) => _context.frame(
-        (holder) {
-          _elementEndec.encode(_context, value);
-          _result.add(holder.require("sequence element"));
-        },
-        false,
-      );
+  void element(V value) => _context.frame((holder) {
+        _elementEndec.encode(_context, value);
+        _result.add(holder.require("sequence element"));
+      });
 
   @override
   void end() => _context.consume(_result);

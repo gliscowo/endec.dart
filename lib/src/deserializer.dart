@@ -5,9 +5,6 @@ import 'package:endec/src/serializer.dart';
 import 'endec_base.dart';
 
 abstract interface class Deserializer {
-  bool boolean();
-  E? optional<E>(Endec<E> endec);
-
   int i8();
   int u8();
 
@@ -23,8 +20,10 @@ abstract interface class Deserializer {
   double f32();
   double f64();
 
+  bool boolean();
   String string();
   Uint8List bytes();
+  E? optional<E>(Endec<E> endec);
 
   SequenceDeserializer<E> sequence<E>(Endec<E> elementEndec);
   MapDeserializer<V> map<V>(Endec<V> valueEndec);

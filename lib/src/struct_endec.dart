@@ -94,7 +94,8 @@ final class _GenericStructField<S, F> implements StructField<S, F> {
   _GenericStructField.optional(this._name, this._endec, this._getter, this._defaultValueFactory);
 
   @override
-  void encodeField(StructSerializer struct, S instance) => struct.field(_name, _endec, _getter(instance));
+  void encodeField(StructSerializer struct, S instance) =>
+      struct.field(_name, _endec, _getter(instance), optional: _defaultValueFactory != null);
 
   @override
   F decodeField(StructDeserializer struct) => _defaultValueFactory != null
