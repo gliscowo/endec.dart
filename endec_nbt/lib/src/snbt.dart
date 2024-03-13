@@ -4,11 +4,11 @@ import 'dart:typed_data';
 
 import 'nbt_types.dart';
 
+NbtElement snbtToNbt(String snbt) => _SnbtReader(snbt).parseElement();
+
 extension ToSnbt on NbtElement {
   String toSnbt() => nbtToSnbt(this);
 }
-
-NbtElement snbtToNbt(String snbt) => _SnbtReader(snbt).parseElement();
 
 String nbtToSnbt(NbtElement element) {
   void stringify(SnbtWriter writer, NbtElement element) {

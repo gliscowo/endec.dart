@@ -29,6 +29,8 @@ abstract class StructEndec<S> with Endec<S> {
 
   @override
   S decode(Deserializer deserializer) => decodeStruct(deserializer.struct());
+
+  StructField<M, S> flatFieldOf<M>(S Function(M struct) getter) => FlatStructField.required(this, getter);
 }
 
 class _SimpleStructEndec<S> extends StructEndec<S> {
@@ -43,25 +45,37 @@ class _SimpleStructEndec<S> extends StructEndec<S> {
   S decodeStruct(StructDeserializer struct) => _decoder(struct);
 }
 
-StructEndecBuilder<S> structEndec<S>() => StructEndecBuilder._();
+final class StructField<S, F> {
+  final String _name;
+  final Endec<F> _endec;
+  final F Function(S struct) _getter;
 
-class StructField<S, F> {
-  final String name;
-  final Endec<F> endec;
-  final F Function(S struct) getter;
+  final bool _required;
+  final F? _defaultValue;
 
-  final bool required;
-  final F? defaultValue;
+  StructField.required(this._name, this._endec, this._getter)
+      : _required = true,
+        _defaultValue = null;
+  StructField.optional(this._name, this._endec, this._getter, F this._defaultValue) : _required = false;
 
-  StructField.required(this.name, this.endec, this.getter)
-      : required = true,
-        defaultValue = null;
-  StructField.optional(this.name, this.endec, this.getter, F this.defaultValue) : required = false;
-
-  void encodeField(StructSerializer struct, S instance) => struct.field(name, endec, getter(instance));
+  void encodeField(StructSerializer struct, S instance) => struct.field(_name, _endec, _getter(instance));
   F decodeField(StructDeserializer struct) =>
-      required ? struct.field(name, endec) : struct.optionalField(name, endec, defaultValue as F);
+      _required ? struct.field(_name, _endec) : struct.optionalField(_name, _endec, _defaultValue as F);
 }
+
+final class FlatStructField<S, M> extends StructField<S, M> {
+  FlatStructField.required(StructEndec<M> endec, M Function(S) getter) : super.required("", endec, getter);
+
+  @override
+  StructEndec<M> get _endec => super._endec as StructEndec<M>;
+
+  @override
+  void encodeField(StructSerializer struct, S instance) => _endec.encodeStruct(struct, _getter(instance));
+  @override
+  M decodeField(StructDeserializer struct) => _endec.decodeStruct(struct);
+}
+
+StructEndecBuilder<S> structEndec<S>() => StructEndecBuilder._();
 
 class StructEndecBuilder<S> {
   StructEndecBuilder._();
