@@ -57,10 +57,10 @@ void main() {
     final requiredFieldEndec = structEndec<(int?,)>()
         .with1Field(Endec.int.optionalOf().fieldOf("field", (struct) => struct.$1), (p0) => (p0,));
 
-    expect(toNbt(optionalFieldEndec, (7,)), NbtCompound({"field": NbtLong(7)}));
+    expect(toNbt(optionalFieldEndec, (7,)), const NbtCompound({"field": NbtLong(7)}));
     expect(
         toNbt(requiredFieldEndec, (7,)),
-        NbtCompound({
+        const NbtCompound({
           "field": NbtCompound({"present": NbtByte(1), "value": NbtLong(7)})
         }));
   });

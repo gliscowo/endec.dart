@@ -46,7 +46,7 @@ final class NbtString extends NbtElement<String> {
   @override
   final NbtElementType type = NbtElementType.string;
 
-  NbtString(super._value);
+  const NbtString(super._value);
   factory NbtString.read(NbtReader input) => NbtString(input.string());
 
   @override
@@ -59,7 +59,7 @@ final class NbtByte extends NbtElement<dart.int> {
   @override
   final NbtElementType type = NbtElementType.byte;
 
-  NbtByte(super._value);
+  const NbtByte(super._value);
   factory NbtByte.read(NbtReader input) => NbtByte(input.i8());
 
   @override
@@ -70,7 +70,7 @@ final class NbtShort extends NbtElement<dart.int> {
   @override
   final NbtElementType type = NbtElementType.short;
 
-  NbtShort(super._value);
+  const NbtShort(super._value);
   factory NbtShort.read(NbtReader input) => NbtShort(input.i16());
 
   @override
@@ -81,7 +81,7 @@ final class NbtInt extends NbtElement<dart.int> {
   @override
   final NbtElementType type = NbtElementType.int;
 
-  NbtInt(super._value);
+  const NbtInt(super._value);
   factory NbtInt.read(NbtReader input) => NbtInt(input.i32());
 
   @override
@@ -92,7 +92,7 @@ final class NbtLong extends NbtElement<dart.int> {
   @override
   final NbtElementType type = NbtElementType.long;
 
-  NbtLong(super._value);
+  const NbtLong(super._value);
   factory NbtLong.read(NbtReader input) => NbtLong(input.i64());
 
   @override
@@ -105,7 +105,7 @@ final class NbtFloat extends NbtElement<double> {
   @override
   final NbtElementType type = NbtElementType.float;
 
-  NbtFloat(super._value);
+  const NbtFloat(super._value);
   factory NbtFloat.read(NbtReader input) => NbtFloat(input.f32());
 
   @override
@@ -116,7 +116,7 @@ final class NbtDouble extends NbtElement<double> {
   @override
   final NbtElementType type = NbtElementType.double;
 
-  NbtDouble(super._value);
+  const NbtDouble(super._value);
   factory NbtDouble.read(NbtReader input) => NbtDouble(input.f64());
 
   @override
@@ -126,7 +126,7 @@ final class NbtDouble extends NbtElement<double> {
 // --- array types ---
 
 sealed class NbtArray<A extends List<dart.int>> extends NbtElement<A> {
-  NbtArray(super.value);
+  const NbtArray(super.value);
 
   @override
   bool operator ==(Object other) =>
@@ -139,7 +139,7 @@ final class NbtByteArray extends NbtArray<Int8List> {
   @override
   final NbtElementType type = NbtElementType.byteArray;
 
-  NbtByteArray(super._value);
+  const NbtByteArray(super._value);
   factory NbtByteArray.read(NbtReader input) => NbtByteArray(input.signedBytes());
 
   @override
@@ -150,7 +150,7 @@ final class NbtIntArray extends NbtArray<Int32List> {
   @override
   final NbtElementType type = NbtElementType.intArray;
 
-  NbtIntArray(super._value);
+  const NbtIntArray(super._value);
   factory NbtIntArray.read(NbtReader input) {
     final length = input.i32();
 
@@ -175,7 +175,7 @@ final class NbtLongArray extends NbtArray<Int64List> {
   @override
   final NbtElementType type = NbtElementType.longArray;
 
-  NbtLongArray(super._value);
+  const NbtLongArray(super._value);
   factory NbtLongArray.read(NbtReader input) {
     final length = input.i32();
 
@@ -202,7 +202,7 @@ final class NbtList extends NbtElement<List<NbtElement>> {
   @override
   final NbtElementType type = NbtElementType.list;
 
-  NbtList(super._value);
+  const NbtList(super._value);
   factory NbtList.read(NbtReader input) {
     final elementType = input.i8();
     final length = input.i32();
@@ -237,7 +237,7 @@ final class NbtCompound extends NbtElement<Map<String, NbtElement>> {
   @override
   final NbtElementType type = NbtElementType.compound;
 
-  NbtCompound(super._value);
+  const NbtCompound(super._value);
   factory NbtCompound.read(NbtReader input) {
     final map = <String, NbtElement>{};
 
