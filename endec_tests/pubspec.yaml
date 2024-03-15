@@ -17,6 +17,8 @@ dependencies:
     path: ../endec_nbt
   endec_binary:
     path: ../endec_binary
+  endec_edm:
+    path: ../endec_edm
 
 dev_dependencies:
   lints: ^3.0.0
