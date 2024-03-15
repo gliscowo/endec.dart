@@ -34,6 +34,7 @@ abstract class StructEndec<S> with Endec<S> {
   StructEndec<U> xmap<U>(U Function(S self) to, S Function(U other) from) => _XmapStructEndec(this, to, from);
 
   StructField<M, S> flatFieldOf<M>(S Function(M struct) getter) => StructField.flat(this, getter);
+  StructField<M, S> flatInheritedFieldOf<M extends S>() => StructField.flat(this, (struct) => struct);
 }
 
 class _SimpleStructEndec<S> extends StructEndec<S> {

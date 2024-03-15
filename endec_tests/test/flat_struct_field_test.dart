@@ -11,7 +11,7 @@ void main() {
     );
 
     final childClassEndec = structEndec<ChildClass>().with2Fields(
-      fieldsEndec.flatFieldOf((struct) => (struct.aField, struct.anotherField)),
+      fieldsEndec.flatFieldOf((struct) => struct.packFields()),
       Endec.f64.listOf().fieldOf("third_field", (struct) => struct.thirdField),
       (p0, p1) => ChildClass(p0.$1, p0.$2, p1),
     );
@@ -34,13 +34,13 @@ void main() {
     );
 
     final childClassEndec = structEndec<ChildClass>().with2Fields(
-      fieldsEndec.flatFieldOf((struct) => (struct.aField, struct.anotherField)),
+      fieldsEndec.flatFieldOf((struct) => struct.packFields()),
       Endec.f64.listOf().fieldOf("third_field", (struct) => struct.thirdField),
       (p0, p1) => ChildClass(p0.$1, p0.$2, p1),
     );
 
     final grandChildClassEndec = structEndec<GrandchildClass>().with2Fields(
-      childClassEndec.flatFieldOf((struct) => ChildClass(struct.aField, struct.anotherField, struct.thirdField)),
+      childClassEndec.flatInheritedFieldOf(),
       Endec.bool.fieldOf("bruh", (struct) => struct.bruh),
       (p0, p1) => GrandchildClass(p0.aField, p0.anotherField, p0.thirdField, p1),
     );
@@ -62,6 +62,7 @@ abstract class ParentClass {
   final int anotherField;
 
   ParentClass(this.aField, this.anotherField);
+  (String, int) packFields() => (aField, anotherField);
 }
 
 class ChildClass extends ParentClass {
