@@ -19,8 +19,11 @@ dependencies:
     path: ../endec_binary
   endec_edm:
     path: ../endec_edm
+  endec_builder:
+    path: ../endec_builder  
 
 dev_dependencies:
+  build_runner: ^2.4.9
   lints: ^3.0.0
   path: ^1.9.0
   test: ^1.24.0
