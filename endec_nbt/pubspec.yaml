@@ -1,7 +1,7 @@
 name: endec_nbt
-description: A starting point for Dart libraries or applications.
-version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+description: An implementation of Minecraft's Named Binary Tag format for endec
+version: 0.1.0
+repository: https://github.com/gliscowo/endec.dart
 
 publish_to: none
 

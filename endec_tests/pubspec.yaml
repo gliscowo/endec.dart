@@ -1,7 +1,7 @@
 name: endec_tests
-description: A sample command-line application.
-version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+description: Test suites for all other endec packages
+version: 0.1.0
+repository: https://github.com/gliscowo/endec.dart
 
 publish_to: none
 

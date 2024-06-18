@@ -1,7 +1,7 @@
 name: endec_builder
-description: A starting point for Dart libraries or applications.
-version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+description: A build system builder for automatically generating struct endecs
+version: 0.1.0
+repository: https://github.com/gliscowo/endec.dart
 
 publish_to: none
 
