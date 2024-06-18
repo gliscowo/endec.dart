@@ -35,6 +35,8 @@ abstract mixin class Endec<T> {
       Endec.of((serializer, value) => serializer.string(value), (deserializer) => deserializer.string());
 
   factory Endec.of(Encoder<T> encoder, Decoder<T> decoder) => _SimpleEndec(encoder, decoder);
+  factory Endec.recursive(Endec<T> Function(Endec<T> thisRef) factory) => _RecursiveEndec(factory);
+
   static Endec<Map<K, V>> map<K, V>(Endec<K> keyEndec, Endec<V> valueEndec) => structEndec<MapEntry<K, V>>()
       .with2Fields(
         keyEndec.fieldOf("k", (entry) => entry.key),
@@ -48,6 +50,7 @@ abstract mixin class Endec<T> {
   T decode(Deserializer deserializer);
 
   Endec<List<T>> listOf() => _ListEndec(this);
+  Endec<Set<T>> setOf() => listOf().xmap((self) => self.toSet(), (other) => other.toList());
   Endec<Map<String, T>> mapOf() => _StringMapEndec(this);
   Endec<T?> optionalOf() => _OptionalEndec(this);
 
@@ -128,6 +131,18 @@ class _XmapEndec<T, U> with Endec<U> {
   void encode(Serializer serializer, U value) => _sourceEndec.encode(serializer, _from(value));
   @override
   U decode(Deserializer deserializer) => _to(_sourceEndec.decode(deserializer));
+}
+
+class _RecursiveEndec<T> with Endec<T> {
+  late final Endec<T> _inner;
+  _RecursiveEndec(Endec<T> Function(Endec<T>) endecFactory) {
+    _inner = endecFactory(this);
+  }
+
+  @override
+  T decode(Deserializer deserializer) => _inner.decode(deserializer);
+  @override
+  void encode(Serializer serializer, T value) => _inner.encode(serializer, value);
 }
 
 class _SimpleEndec<T> with Endec<T> {

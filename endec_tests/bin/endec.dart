@@ -1,26 +1,24 @@
-import 'dart:io';
-
 import 'package:endec/endec.dart';
-import 'package:endec_nbt/endec_nbt.dart';
+import 'package:endec_json/endec_json.dart';
 
-void main(List<String> args) {
-  var encoded = toNbt(
-      MyEpicStruct.endec,
-      MyEpicStruct(
-        "a",
-        5,
-        {
-          "some entry": [1.0, double.maxFinite],
-          "another entry": [6.9, 4.2, 0.0]
-        },
-      ));
+// void main(List<String> args) {
+//   var encoded = toNbt(
+//       MyEpicStruct.endec,
+//       MyEpicStruct(
+//         "a",
+//         5,
+//         {
+//           "some entry": [1.0, double.maxFinite],
+//           "another entry": [6.9, 4.2, 0.0]
+//         },
+//       ));
 
-  File("encode_struct.nbt").writeAsBytesSync(nbtToBinary(encoded as NbtCompound));
-  print(nbtToSnbt(encoded));
+//   File("encode_struct.nbt").writeAsBytesSync(nbtToBinary(encoded as NbtCompound));
+//   print(nbtToSnbt(encoded));
 
-  var deserialized = fromNbt(MyEpicStruct.endec, encoded);
-  print(deserialized);
-}
+//   var deserialized = fromNbt(MyEpicStruct.endec, encoded);
+//   print(deserialized);
+// }
 
 // void main(List<String> args) {
 //   var json = {
@@ -34,7 +32,7 @@ void main(List<String> args) {
 // }
 
 class MyEpicStruct {
-  static final Endec<MyEpicStruct> endec = structEndec<MyEpicStruct>().with3Fields(
+  static final endec = structEndec<MyEpicStruct>().with3Fields(
     Endec.string.fieldOf("a_field", (struct) => struct.aField),
     Endec.i64.fieldOf("another_field", (struct) => struct.anotherField),
     Endec.f64.listOf().mapOf().fieldOf("map_field", (struct) => struct.mapField, defaultValueFactory: () => {}),
@@ -49,4 +47,29 @@ class MyEpicStruct {
 
   @override
   String toString() => "aField: $aField\nanotherField: $anotherField\nmapField: $mapField";
+}
+
+class RecursiveStruct {
+  static final endec = Endec<RecursiveStruct>.recursive(
+    (thisRef) => structEndec<RecursiveStruct>().with2Fields(
+      Endec.i32.fieldOf("a_field", (struct) => struct.aField),
+      thisRef.optionalOf().fieldOf("inner", (struct) => struct.inner, defaultValueFactory: () => null),
+      (p0, p1) => RecursiveStruct(p0, p1),
+    ),
+  );
+
+  final int aField;
+  final RecursiveStruct? inner;
+
+  RecursiveStruct(this.aField, this.inner);
+
+  @override
+  String toString() => "RecursiveStruct($aField, $inner)";
+}
+
+void main(List<String> args) {
+  final json = toJson(RecursiveStruct.endec, RecursiveStruct(34, RecursiveStruct(35, null)));
+  print(json);
+  final decoded = fromJson(RecursiveStruct.endec, json);
+  print(decoded);
 }

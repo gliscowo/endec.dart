@@ -122,7 +122,7 @@ class _JsonMapDeserializer<V> implements MapDeserializer<V>, StructDeserializer 
     }
 
     return _context.frame(
-      () => _map[name]!,
+      () => _map[name],
       () => endec.decode(_context),
       true,
     );
