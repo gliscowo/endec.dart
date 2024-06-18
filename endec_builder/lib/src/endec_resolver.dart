@@ -1,8 +1,8 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
+import 'package:endec/endec_annotation.dart';
 import 'package:source_helper/source_helper.dart';
 
-import '../endec_annotation.dart';
 import 'struct_endec_generator.dart';
 
 /// Resolve the endec to use for [field] in the current [context],
@@ -101,7 +101,7 @@ String _numberTypeEndec<E extends Enum>(
       (element) {
         final elementRef = element!.element;
         return elementRef is PropertyAccessorElement &&
-            elementRef.library.identifier == 'package:endec_builder/endec_annotation.dart' &&
+            elementRef.library.identifier == 'package:endec/endec_annotation.dart' &&
             elementRef.type.returnType.element?.name == name;
       },
       orElse: () => null,

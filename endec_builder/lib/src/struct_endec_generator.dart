@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
+import 'package:endec/endec_annotation.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:source_helper/source_helper.dart';
 
-import '../endec_annotation.dart';
 import 'endec_resolver.dart';
 
 class GeneratorContext {
@@ -49,8 +49,7 @@ class StructEndecGenerator extends GeneratorForAnnotation<GenerateStructEndec> {
   @override
   FutureOr<String> generate(LibraryReader library, BuildStep buildStep) async {
     try {
-      final endecAnnotationLib =
-          await buildStep.resolver.libraryFor(AssetId('endec_builder', 'lib/endec_annotation.dart'));
+      final endecAnnotationLib = await buildStep.resolver.libraryFor(AssetId('endec', 'lib/endec_annotation.dart'));
       final generateAnnotationClass =
           endecAnnotationLib.topLevelElements.firstWhere((element) => element.name == 'GenerateStructEndec');
       final excludeAnnotationConstant =

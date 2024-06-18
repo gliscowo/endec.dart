@@ -1,5 +1,5 @@
 import 'package:endec/endec.dart';
-import 'package:endec_builder/endec_annotation.dart';
+import 'package:endec/endec_annotation.dart';
 
 part 'build_test.g.dart';
 
