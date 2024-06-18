@@ -176,7 +176,7 @@ packages:
     source: path
     version: "1.0.0"
   endec_builder:
-    dependency: "direct main"
+    dependency: "direct dev"
     description:
       path: "../endec_builder"
       relative: true
