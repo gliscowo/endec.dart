@@ -1,8 +1,10 @@
+import 'dart:core' as core show bool;
+import 'dart:core' hide bool;
+import 'dart:typed_data';
+
 import 'deserializer.dart';
 import 'serializer.dart';
 import 'struct_endec.dart';
-
-typedef Bool = bool;
 
 typedef Encoder<T> = void Function(Serializer serializer, T value);
 typedef Decoder<T> = T Function(Deserializer deserializer);
@@ -29,10 +31,12 @@ abstract mixin class Endec<T> {
       Endec.of((serializer, value) => serializer.f32(value), (deserializer) => deserializer.f32());
   static final Endec<double> f64 =
       Endec.of((serializer, value) => serializer.f64(value), (deserializer) => deserializer.f64());
-  static final Endec<Bool> bool =
+  static final Endec<core.bool> bool =
       Endec.of((serializer, value) => serializer.boolean(value), (deserializer) => deserializer.boolean());
   static final Endec<String> string =
       Endec.of((serializer, value) => serializer.string(value), (deserializer) => deserializer.string());
+  static final Endec<Uint8List> bytes =
+      Endec.of((serializer, value) => serializer.bytes(value), (deserializer) => deserializer.bytes());
 
   factory Endec.of(Encoder<T> encoder, Decoder<T> decoder) => _SimpleEndec(encoder, decoder);
   factory Endec.recursive(Endec<T> Function(Endec<T> thisRef) factory) => _RecursiveEndec(factory);

@@ -35,13 +35,25 @@ String _endecForType(
   List<ElementAnnotation> annotations = const [],
 ]) {
   String? endec;
-  if (type.isDartCoreInt) endec = integralEndec(type, settings.defaultIntType, annotations);
-  if (type.isDartCoreDouble) endec = floatEndec(type, settings.defaultFloatType, annotations);
-  if (type.isDartCoreString) endec = 'Endec.string';
-  if (type.isDartCoreBool) endec = 'Endec.bool';
 
+  // int
+  if (type.isDartCoreInt) {
+    endec = integralEndec(type, settings.defaultIntType, annotations);
+  }
+  // double
+  else if (type.isDartCoreDouble) {
+    endec = floatEndec(type, settings.defaultFloatType, annotations);
+  }
+  // string
+  else if (type.isDartCoreString) {
+    endec = 'Endec.string';
+  }
+  // bool
+  else if (type.isDartCoreBool) {
+    endec = 'Endec.bool';
+  }
   // recursive reference
-  if (type.element == enclosingType.element) {
+  else if (type.element == enclosingType.element) {
     endec = 'thisRef';
   }
   // list
@@ -61,8 +73,13 @@ String _endecForType(
     }
   }
   // other struct
-  else if (endec == null && type is InterfaceType) {
-    if (type.element case ClassElement classElement) {
+  else if (type is InterfaceType) {
+    // bytes
+    if (type.element.name == 'Uint8List' && type.element.library.name == 'dart.typed_data') {
+      endec = 'Endec.bytes';
+    }
+    // serilizable struct
+    else if (type.element case ClassElement classElement) {
       if (context.hasGenerateAnnotation(classElement)) {
         if (classElement.library == context.library) {
           endec = endecNameForType(type);
@@ -82,10 +99,10 @@ String _endecForType(
 }
 
 String integralEndec(DartType type, IntegralType fallback, List<ElementAnnotation> extraMetadata) =>
-    _numberTypeEndec(type, "IntegralType", fallback, IntegralType.values, extraMetadata);
+    _numberTypeEndec(type, 'IntegralType', fallback, IntegralType.values, extraMetadata);
 
 String floatEndec(DartType type, FloatType fallback, List<ElementAnnotation> extraMetadata) =>
-    _numberTypeEndec(type, "FloatType", fallback, FloatType.values, extraMetadata);
+    _numberTypeEndec(type, 'FloatType', fallback, FloatType.values, extraMetadata);
 
 String _numberTypeEndec<E extends Enum>(
   DartType type,
