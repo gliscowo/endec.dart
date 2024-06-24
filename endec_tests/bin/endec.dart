@@ -68,8 +68,12 @@ class RecursiveStruct {
 }
 
 void main(List<String> args) {
-  final json = toJson(RecursiveStruct.endec, RecursiveStruct(34, RecursiveStruct(35, null)));
-  print(json);
-  final decoded = fromJson(RecursiveStruct.endec, json);
-  print(decoded);
+  final json = '1.25';
+  final endec = Endec.f64.tryWhenDecoding([Endec.string.xmap(double.parse, (other) => other.toString())]).ranged(
+    min: 0,
+    max: 1.5,
+    error: true,
+  );
+
+  print(fromJson(endec, json));
 }

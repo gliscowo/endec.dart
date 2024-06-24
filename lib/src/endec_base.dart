@@ -70,6 +70,45 @@ abstract mixin class Endec<T> {
   Endec<U> xmap<U>(U Function(T self) to, T Function(U other) from) => _XmapEndec(this, to, from);
 }
 
+// --- type-specific extensions ---
+
+extension RangedNumEndec<N extends num> on Endec<N> {
+  /// Create a new endec which verifies that the number values in receives during
+  /// de- and encoding are between [min] and [max] (both inclusive).
+  ///
+  /// If [error] is set, a [RangedNumException] is thrown when the value outside
+  /// the specific bounds. Otherwise, it is corrected to the nearest bound and passed on
+  Endec<N> ranged({N? min, N? max, core.bool error = false}) => xmap(
+        (value) => _checkBounds(value, min, max, error),
+        (value) => _checkBounds(value, min, max, error),
+      );
+
+  static N _checkBounds<N extends num>(N value, N? min, N? max, core.bool error) {
+    if (min != null && value < min) {
+      if (error) throw RangedNumException._(value, min, max);
+      value = min;
+    } else if (max != null && value > max) {
+      if (error) throw RangedNumException._(value, min, max);
+      value = max;
+    }
+
+    return value;
+  }
+}
+
+class RangedNumException implements Exception {
+  final num value;
+  final num? lowerBound, upperBound;
+
+  RangedNumException._(this.value, this.lowerBound, this.upperBound);
+
+  @override
+  String toString() =>
+      'Value $value is out of range: ${lowerBound != null ? '[$lowerBound' : '(∞'},${upperBound != null ? '$upperBound]' : '∞)'}';
+}
+
+// --- implementation classes ---
+
 class _ListEndec<T> with Endec<List<T>> {
   final Endec<T> _elementEndec;
   _ListEndec(this._elementEndec);
