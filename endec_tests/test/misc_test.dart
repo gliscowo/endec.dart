@@ -31,7 +31,26 @@ void main() {
     var serializer = BinarySerializer();
     jsonEndec.encode(SerializationContext.empty, serializer, json);
 
-    expect(jsonEndec.decode(SerializationContext.empty, BinaryDeserializer(ByteData.view(serializer.result.buffer))),
-        json);
+    expect(
+      jsonEndec.decode(SerializationContext.empty, BinaryDeserializer(ByteData.view(serializer.result.buffer))),
+      json,
+    );
+  });
+
+  test('ranged nums', () {
+    expect(
+      fromJson(Endec.i32.ranged(min: -2, max: 10), -10),
+      -2,
+    );
+
+    expect(
+      fromJson(Endec.i32.ranged(min: 0, max: 10), 15),
+      10,
+    );
+
+    expect(
+      () => fromJson(Endec.f32.ranged(min: -2, max: -.25, error: true), 0.0),
+      throwsA(isA<RangedNumException>()),
+    );
   });
 }
