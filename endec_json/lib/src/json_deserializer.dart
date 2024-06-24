@@ -4,9 +4,9 @@ import 'package:endec/endec.dart';
 
 import 'json_endec.dart';
 
-T fromJson<T>(Endec<T> endec, Object json) {
+T fromJson<T>(Endec<T> endec, Object json, {SerializationContext ctx = SerializationContext.empty}) {
   final deserializer = JsonDeserializer(json);
-  return endec.decode(deserializer);
+  return endec.decode(ctx, deserializer);
 }
 
 typedef JsonSource = Object? Function();
@@ -15,28 +15,29 @@ class JsonDeserializer extends RecursiveDeserializer<Object?> implements SelfDes
   JsonDeserializer(super._serialized);
 
   @override
-  void any(Serializer visitor) => _decodeElement(visitor, currentValue());
-  void _decodeElement(Serializer visitor, Object? element) {
+  void any(SerializationContext ctx, Serializer visitor) => _decodeElement(ctx, visitor, currentValue());
+  void _decodeElement(SerializationContext ctx, Serializer visitor, Object? element) {
     switch (element) {
       case null:
-        visitor.optional(jsonEndec, element);
+        visitor.optional(ctx, jsonEndec, element);
       case int value:
-        visitor.i64(value);
+        visitor.i64(ctx, value);
       case double value:
-        visitor.f64(value);
+        visitor.f64(ctx, value);
       case bool value:
-        visitor.boolean(value);
+        visitor.boolean(ctx, value);
       case String value:
-        visitor.string(value);
-        visitor.string(value);
+        visitor.string(ctx, value);
+        visitor.string(ctx, value);
       case List<dynamic> value:
-        final state = visitor.sequence(Endec<Object?>.of(_decodeElement, (deserializer) => null), value.length);
+        final state =
+            visitor.sequence(ctx, Endec<Object?>.of(_decodeElement, (ctx, deserializer) => null), value.length);
         for (final element in value) {
           state.element(element);
         }
         state.end();
       case Map<String, dynamic> value:
-        final state = visitor.map(Endec<Object?>.of(_decodeElement, (deserializer) => null), value.length);
+        final state = visitor.map(ctx, Endec<Object?>.of(_decodeElement, (ctx, deserializer) => null), value.length);
         for (final MapEntry(:key, :value) in value.entries) {
           state.entry(key, value);
         }
@@ -47,115 +48,119 @@ class JsonDeserializer extends RecursiveDeserializer<Object?> implements SelfDes
   }
 
   @override
-  int i8() => currentValue();
+  int i8(SerializationContext ctx) => currentValue();
   @override
-  int u8() => currentValue();
+  int u8(SerializationContext ctx) => currentValue();
 
   @override
-  int i16() => currentValue();
+  int i16(SerializationContext ctx) => currentValue();
   @override
-  int u16() => currentValue();
+  int u16(SerializationContext ctx) => currentValue();
 
   @override
-  int i32() => currentValue();
+  int i32(SerializationContext ctx) => currentValue();
   @override
-  int u32() => currentValue();
+  int u32(SerializationContext ctx) => currentValue();
 
   @override
-  int i64() => currentValue();
+  int i64(SerializationContext ctx) => currentValue();
   @override
-  int u64() => currentValue();
+  int u64(SerializationContext ctx) => currentValue();
 
   @override
-  double f32() => currentValue();
+  double f32(SerializationContext ctx) => currentValue();
   @override
-  double f64() => currentValue();
+  double f64(SerializationContext ctx) => currentValue();
 
   @override
-  bool boolean() => currentValue();
+  bool boolean(SerializationContext ctx) => currentValue();
   @override
-  String string() => currentValue();
+  String string(SerializationContext ctx) => currentValue();
   @override
-  Uint8List bytes() => Uint8List.fromList(currentValue<List<dynamic>>().cast<int>());
+  Uint8List bytes(SerializationContext ctx) => Uint8List.fromList(currentValue<List<dynamic>>().cast<int>());
   @override
-  E? optional<E>(Endec<E> endec) => currentValue() != null ? endec.decode(this) : null;
+  E? optional<E>(SerializationContext ctx, Endec<E> endec) => currentValue() != null ? endec.decode(ctx, this) : null;
 
   @override
-  SequenceDeserializer<E> sequence<E>(Endec<E> elementEndec) =>
-      _JsonSequenceDeserializer(this, elementEndec, currentValue<List<dynamic>>());
+  SequenceDeserializer<E> sequence<E>(SerializationContext ctx, Endec<E> elementEndec) =>
+      _JsonSequenceDeserializer(this, ctx, elementEndec, currentValue<List<dynamic>>());
   @override
-  MapDeserializer<V> map<V>(Endec<V> valueEndec) =>
-      _JsonMapDeserializer.map(this, valueEndec, currentValue<Map<String, dynamic>>());
+  MapDeserializer<V> map<V>(SerializationContext ctx, Endec<V> valueEndec) =>
+      _JsonMapDeserializer.map(this, ctx, valueEndec, currentValue<Map<String, dynamic>>());
   @override
   StructDeserializer struct() => _JsonMapDeserializer.struct(this, currentValue<Map<String, dynamic>>());
 }
 
 class _JsonMapDeserializer<V> implements MapDeserializer<V>, StructDeserializer {
-  final JsonDeserializer _context;
+  final JsonDeserializer _deserializer;
+  final SerializationContext? _ctx;
   final Endec<V>? _valueEndec;
 
   final Map<String, dynamic> _map;
   final Iterator<MapEntry<String, dynamic>> _entries;
 
-  _JsonMapDeserializer.map(this._context, Endec<V> valueEndec, this._map)
+  _JsonMapDeserializer.map(this._deserializer, this._ctx, Endec<V> valueEndec, this._map)
       : _valueEndec = valueEndec,
         _entries = _map.entries.iterator;
 
-  _JsonMapDeserializer.struct(this._context, this._map)
-      : _valueEndec = null,
+  _JsonMapDeserializer.struct(this._deserializer, this._map)
+      : _ctx = null,
+        _valueEndec = null,
         _entries = _map.entries.iterator;
 
   @override
   bool moveNext() => _entries.moveNext();
 
   @override
-  (String, V) entry() => _context.frame(
+  (String, V) entry() => _deserializer.frame(
         () => _entries.current.value,
-        () => (_entries.current.key, _valueEndec!.decode(_context)),
+        () => (_entries.current.key, _valueEndec!.decode(_ctx!, _deserializer)),
         false,
       );
 
   @override
-  F field<F>(String name, Endec<F> endec) {
+  F field<F>(String name, SerializationContext ctx, Endec<F> endec) {
     if (!_map.containsKey(name)) {
       throw JsonDecodeException("Required Field $name is missing from serialized data");
     }
 
-    return _context.frame(
+    return _deserializer.frame(
       () => _map[name],
-      () => endec.decode(_context),
+      () => endec.decode(ctx, _deserializer),
       true,
     );
   }
 
   @override
-  F optionalField<F>(String name, Endec<F> endec, F Function() defaultValueFactory) {
+  F optionalField<F>(String name, SerializationContext ctx, Endec<F> endec, F Function() defaultValueFactory) {
     if (!_map.containsKey(name)) {
       return defaultValueFactory();
     }
 
-    return _context.frame(
+    return _deserializer.frame(
       () => _map[name]!,
-      () => endec.decode(_context),
+      () => endec.decode(ctx, _deserializer),
       true,
     );
   }
 }
 
 class _JsonSequenceDeserializer<V> implements SequenceDeserializer<V> {
-  final JsonDeserializer _context;
+  final JsonDeserializer _deserializer;
+  final SerializationContext _ctx;
   final Endec<V> _elementEndec;
   final Iterator<dynamic> _entries;
 
-  _JsonSequenceDeserializer(this._context, this._elementEndec, List<dynamic> list) : _entries = list.iterator;
+  _JsonSequenceDeserializer(this._deserializer, this._ctx, this._elementEndec, List<dynamic> list)
+      : _entries = list.iterator;
 
   @override
   bool moveNext() => _entries.moveNext();
 
   @override
-  V element() => _context.frame(
+  V element() => _deserializer.frame(
         () => _entries.current,
-        () => _elementEndec.decode(_context),
+        () => _elementEndec.decode(_ctx, _deserializer),
         false,
       );
 }

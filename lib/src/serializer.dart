@@ -1,30 +1,32 @@
 import 'dart:typed_data';
 
 import 'endec_base.dart';
+import 'serialization_context.dart';
 
 abstract interface class Serializer {
-  void i8(int value);
-  void u8(int value);
+  void i8(SerializationContext ctx, int value);
+  void u8(SerializationContext ctx, int value);
 
-  void i16(int value);
-  void u16(int value);
+  void i16(SerializationContext ctx, int value);
+  void u16(SerializationContext ctx, int value);
 
-  void i32(int value);
-  void u32(int value);
+  void i32(SerializationContext ctx, int value);
+  void u32(SerializationContext ctx, int value);
 
-  void i64(int value);
-  void u64(int value);
+  void i64(SerializationContext ctx, int value);
+  void u64(SerializationContext ctx, int value);
 
-  void f32(double value);
-  void f64(double value);
+  void f32(SerializationContext ctx, double value);
+  void f64(SerializationContext ctx, double value);
 
-  void boolean(bool value);
-  void string(String value);
-  void bytes(Uint8List bytes);
-  void optional<E>(Endec<E> endec, E? value);
+  void boolean(SerializationContext ctx, bool value);
+  void string(SerializationContext ctx, String value);
+  void bytes(SerializationContext ctx, Uint8List bytes);
 
-  SequenceSerializer<E> sequence<E>(Endec<E> elementEndec, int length);
-  MapSerializer<V> map<V>(Endec<V> valueEndec, int length);
+  void optional<E>(SerializationContext ctx, Endec<E> endec, E? value);
+
+  SequenceSerializer<E> sequence<E>(SerializationContext ctx, Endec<E> elementEndec, int length);
+  MapSerializer<V> map<V>(SerializationContext ctx, Endec<V> valueEndec, int length);
   StructSerializer struct();
 
   bool get selfDescribing;
@@ -41,6 +43,6 @@ abstract interface class MapSerializer<V> {
 }
 
 abstract interface class StructSerializer {
-  void field<F, V extends F>(String name, Endec<F> endec, V value, {bool optional = false});
+  void field<F, V extends F>(String name, SerializationContext ctx, Endec<F> endec, V value, {bool optional = false});
   void end();
 }

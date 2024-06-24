@@ -4,9 +4,9 @@ import 'package:endec/endec.dart';
 
 import 'nbt_types.dart';
 
-NbtElement toNbt<T, S extends T>(Endec<T> endec, S value) {
+NbtElement toNbt<T, S extends T>(Endec<T> endec, S value, {SerializationContext ctx = SerializationContext.empty}) {
   final serializer = NbtSerializer();
-  endec.encode(serializer, value);
+  endec.encode(ctx, serializer, value);
   return serializer.result;
 }
 
@@ -17,75 +17,87 @@ class NbtSerializer extends RecursiveSerializer {
   NbtSerializer() : super(NbtCompound(const {}));
 
   @override
-  void i8(int value) => consume(NbtByte(value));
+  void i8(SerializationContext ctx, int value) => consume(NbtByte(value));
   @override
-  void u8(int value) => consume(NbtByte(value));
+  void u8(SerializationContext ctx, int value) => consume(NbtByte(value));
 
   @override
-  void i16(int value) => consume(NbtShort(value));
+  void i16(SerializationContext ctx, int value) => consume(NbtShort(value));
   @override
-  void u16(int value) => consume(NbtShort(value));
+  void u16(SerializationContext ctx, int value) => consume(NbtShort(value));
 
   @override
-  void i32(int value) => consume(NbtInt(value));
+  void i32(SerializationContext ctx, int value) => consume(NbtInt(value));
   @override
-  void u32(int value) => consume(NbtInt(value));
+  void u32(SerializationContext ctx, int value) => consume(NbtInt(value));
 
   @override
-  void i64(int value) => consume(NbtLong(value));
+  void i64(SerializationContext ctx, int value) => consume(NbtLong(value));
   @override
-  void u64(int value) => consume(NbtLong(value));
+  void u64(SerializationContext ctx, int value) => consume(NbtLong(value));
 
   @override
-  void f32(double value) => consume(NbtFloat(value));
+  void f32(SerializationContext ctx, double value) => consume(NbtFloat(value));
   @override
-  void f64(double value) => consume(NbtDouble(value));
+  void f64(SerializationContext ctx, double value) => consume(NbtDouble(value));
 
   @override
-  void boolean(bool value) => consume(NbtByte(value ? 1 : 0));
+  void boolean(SerializationContext ctx, bool value) => consume(NbtByte(value ? 1 : 0));
   @override
-  void string(String value) => consume(NbtString(value));
+  void string(SerializationContext ctx, String value) => consume(NbtString(value));
   @override
-  void bytes(Uint8List bytes) => consume(NbtByteArray(Int8List.view(bytes.buffer)));
+  void bytes(SerializationContext ctx, Uint8List bytes) => consume(NbtByteArray(Int8List.view(bytes.buffer)));
   @override
-  void optional<E>(Endec<E> endec, E? value) {
+  void optional<E>(SerializationContext ctx, Endec<E> endec, E? value) {
     if (isWritingOptionalStructField) {
       if (value == null) return;
-      endec.encode(this, value);
+      endec.encode(ctx, this, value);
     } else {
       final state = struct();
-      state.field("present", Endec.bool, value != null);
-      if (value != null) state.field("value", endec, value);
+      state.field("present", ctx, Endec.bool, value != null);
+      if (value != null) state.field("value", ctx, endec, value);
       state.end();
     }
   }
 
   @override
-  SequenceSerializer<E> sequence<E>(Endec<E> elementEndec, int length) => _NbtSequenceSerializer(this, elementEndec);
+  SequenceSerializer<E> sequence<E>(SerializationContext ctx, Endec<E> elementEndec, int length) =>
+      _NbtSequenceSerializer(this, ctx, elementEndec);
   @override
-  MapSerializer<V> map<V>(Endec<V> valueEndec, int length) => _NbtMapSerializer.map(this, valueEndec);
+  MapSerializer<V> map<V>(SerializationContext ctx, Endec<V> valueEndec, int length) =>
+      _NbtMapSerializer.map(this, ctx, valueEndec);
   @override
   StructSerializer struct() => _NbtMapSerializer.struct(this);
 }
 
 class _NbtMapSerializer<V> implements MapSerializer<V>, StructSerializer {
-  final NbtSerializer _context;
+  final NbtSerializer _serializer;
+  final SerializationContext? _ctx;
   final Endec<V>? _valueEndec;
   final Map<String, NbtElement> _result = {};
 
-  _NbtMapSerializer.map(this._context, Endec<V> valueEndec) : _valueEndec = valueEndec;
-  _NbtMapSerializer.struct(this._context) : _valueEndec = null;
+  _NbtMapSerializer.map(this._serializer, this._ctx, Endec<V> valueEndec) : _valueEndec = valueEndec;
+  _NbtMapSerializer.struct(this._serializer)
+      : _ctx = null,
+        _valueEndec = null;
 
   @override
-  void entry(String key, V value) => _context.frame((holder) {
-        _valueEndec!.encode(_context, value);
+  void entry(String key, V value) => _serializer.frame((holder) {
+        _valueEndec!.encode(_ctx!, _serializer, value);
         _result[key] = holder.require("map value");
       });
 
   @override
-  void field<F, _V extends F>(String key, Endec<F> endec, _V value, {bool optional = false}) => _context.frame(
+  void field<F, _V extends F>(
+    String key,
+    SerializationContext ctx,
+    Endec<F> endec,
+    _V value, {
+    bool optional = false,
+  }) =>
+      _serializer.frame(
         (holder) {
-          endec.encode(_context, value);
+          endec.encode(ctx, _serializer, value);
 
           if (optional && !holder.wasEncoded) return;
           _result[key] = holder.require("struct field");
@@ -94,24 +106,25 @@ class _NbtMapSerializer<V> implements MapSerializer<V>, StructSerializer {
       );
 
   @override
-  void end() => _context.consume(NbtCompound(_result));
+  void end() => _serializer.consume(NbtCompound(_result));
 }
 
 class _NbtSequenceSerializer<V> implements SequenceSerializer<V> {
-  final NbtSerializer _context;
+  final NbtSerializer _serializer;
+  final SerializationContext _ctx;
   final Endec<V> _elementEndec;
   final List<NbtElement> _result = [];
 
-  _NbtSequenceSerializer(this._context, this._elementEndec);
+  _NbtSequenceSerializer(this._serializer, this._ctx, this._elementEndec);
 
   @override
-  void element(V value) => _context.frame((holder) {
-        _elementEndec.encode(_context, value);
+  void element(V value) => _serializer.frame((holder) {
+        _elementEndec.encode(_ctx, _serializer, value);
         _result.add(holder.require("sequence element"));
       });
 
   @override
-  void end() => _context.consume(NbtList(_result));
+  void end() => _serializer.consume(NbtList(_result));
 }
 
 class NbtEncodeError extends Error {

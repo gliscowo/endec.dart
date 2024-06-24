@@ -3,9 +3,9 @@ import 'dart:typed_data';
 
 import 'package:endec/endec.dart';
 
-Uint8List toBinary<T, S extends T>(Endec<T> endec, S value) {
+Uint8List toBinary<T, S extends T>(Endec<T> endec, S value, {SerializationContext ctx = SerializationContext.empty}) {
   final serializer = BinarySerializer();
-  endec.encode(serializer, value);
+  endec.encode(ctx, serializer, value);
 
   return serializer.result;
 }
@@ -18,41 +18,41 @@ class BinarySerializer implements Serializer {
   int _cursor = 0;
 
   @override
-  void boolean(bool value) => u8(value ? 1 : 0);
+  void boolean(SerializationContext ctx, bool value) => u8(ctx, value ? 1 : 0);
   @override
-  void optional<E>(Endec<E> endec, E? value) {
+  void optional<E>(SerializationContext ctx, Endec<E> endec, E? value) {
     if (value != null) {
-      boolean(true);
-      endec.encode(this, value);
+      boolean(ctx, true);
+      endec.encode(ctx, this, value);
     } else {
-      boolean(false);
+      boolean(ctx, false);
     }
   }
 
   @override
-  void i8(int value) => _write((idx, value, _) => _buffer.setInt8(idx, value), value, 1);
+  void i8(SerializationContext ctx, int value) => _write((idx, value, _) => _buffer.setInt8(idx, value), value, 1);
   @override
-  void u8(int value) => _write((idx, value, _) => _buffer.setUint8(idx, value), value, 1);
+  void u8(SerializationContext ctx, int value) => _write((idx, value, _) => _buffer.setUint8(idx, value), value, 1);
 
   @override
-  void i16(int value) => _write(_buffer.setInt16, value, 2);
+  void i16(SerializationContext ctx, int value) => _write(_buffer.setInt16, value, 2);
   @override
-  void u16(int value) => _write(_buffer.setUint16, value, 2);
+  void u16(SerializationContext ctx, int value) => _write(_buffer.setUint16, value, 2);
 
   @override
-  void i32(int value) => _write(_buffer.setInt32, value, 4);
+  void i32(SerializationContext ctx, int value) => _write(_buffer.setInt32, value, 4);
   @override
-  void u32(int value) => _write(_buffer.setUint32, value, 4);
+  void u32(SerializationContext ctx, int value) => _write(_buffer.setUint32, value, 4);
 
   @override
-  void i64(int value) => _write(_buffer.setInt64, value, 8);
+  void i64(SerializationContext ctx, int value) => _write(_buffer.setInt64, value, 8);
   @override
-  void u64(int value) => _write(_buffer.setUint64, value, 8);
+  void u64(SerializationContext ctx, int value) => _write(_buffer.setUint64, value, 8);
 
   @override
-  void f32(double value) => _write(_buffer.setFloat32, value, 4);
+  void f32(SerializationContext ctx, double value) => _write(_buffer.setFloat32, value, 4);
   @override
-  void f64(double value) => _write(_buffer.setFloat64, value, 8);
+  void f64(SerializationContext ctx, double value) => _write(_buffer.setFloat64, value, 8);
 
   void _write<T>(void Function(int idx, T value, Endian) writer, T value, int size) {
     _ensureCapacity(size);
@@ -62,12 +62,12 @@ class BinarySerializer implements Serializer {
   }
 
   @override
-  void string(String value) => _writeBytes(utf8.encode(value));
+  void string(SerializationContext ctx, String value) => _writeBytes(ctx, utf8.encode(value));
   @override
-  void bytes(Uint8List bytes) => _writeBytes(bytes);
+  void bytes(SerializationContext ctx, Uint8List bytes) => _writeBytes(ctx, bytes);
 
-  void _writeBytes(List<int> bytes) {
-    i32(bytes.length);
+  void _writeBytes(SerializationContext ctx, List<int> bytes) {
+    i32(ctx, bytes.length);
 
     _ensureCapacity(bytes.length);
     _buffer.buffer.asUint8List().setRange(_cursor, _cursor + bytes.length, bytes);
@@ -76,15 +76,15 @@ class BinarySerializer implements Serializer {
   }
 
   @override
-  SequenceSerializer<E> sequence<E>(Endec<E> elementEndec, int length) {
-    i32(length);
-    return _BinarySequenceSerializer(this, elementEndec);
+  SequenceSerializer<E> sequence<E>(SerializationContext ctx, Endec<E> elementEndec, int length) {
+    i32(ctx, length);
+    return _BinarySequenceSerializer(this, ctx, elementEndec);
   }
 
   @override
-  MapSerializer<V> map<V>(Endec<V> valueEndec, int length) {
-    i32(length);
-    return _BinaryMapSerializer(this, valueEndec);
+  MapSerializer<V> map<V>(SerializationContext ctx, Endec<V> valueEndec, int length) {
+    i32(ctx, length);
+    return _BinaryMapSerializer(this, ctx, valueEndec);
   }
 
   @override
@@ -103,25 +103,27 @@ class BinarySerializer implements Serializer {
 }
 
 class _BinarySequenceSerializer<V> implements SequenceSerializer<V> {
-  final BinarySerializer _context;
+  final BinarySerializer _serializer;
+  final SerializationContext _ctx;
   final Endec<V> _elementEndec;
-  _BinarySequenceSerializer(this._context, this._elementEndec);
+  _BinarySequenceSerializer(this._serializer, this._ctx, this._elementEndec);
 
   @override
-  void element(V element) => _elementEndec.encode(_context, element);
+  void element(V element) => _elementEndec.encode(_ctx, _serializer, element);
   @override
   void end() {}
 }
 
 class _BinaryMapSerializer<V> implements MapSerializer<V> {
-  final BinarySerializer _context;
+  final BinarySerializer _serializer;
+  final SerializationContext _ctx;
   final Endec<V> _valueEndec;
-  _BinaryMapSerializer(this._context, this._valueEndec);
+  _BinaryMapSerializer(this._serializer, this._ctx, this._valueEndec);
 
   @override
   void entry(String key, V element) {
-    _context.string(key);
-    _valueEndec.encode(_context, element);
+    _serializer.string(_ctx, key);
+    _valueEndec.encode(_ctx, _serializer, element);
   }
 
   @override
@@ -129,12 +131,12 @@ class _BinaryMapSerializer<V> implements MapSerializer<V> {
 }
 
 class _BinaryStructSerializer implements StructSerializer {
-  final BinarySerializer _context;
-  _BinaryStructSerializer(this._context);
+  final BinarySerializer _serializer;
+  _BinaryStructSerializer(this._serializer);
 
   @override
-  void field<F, V extends F>(String name, Endec<F> endec, V value, {bool optional = false}) =>
-      endec.encode(_context, value);
+  void field<F, V extends F>(String name, SerializationContext ctx, Endec<F> endec, V value, {bool optional = false}) =>
+      endec.encode(ctx, _serializer, value);
 
   @override
   void end() {}

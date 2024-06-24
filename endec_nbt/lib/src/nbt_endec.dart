@@ -13,25 +13,25 @@ class NbtEndec with Endec<NbtElement> {
   const NbtEndec._();
 
   @override
-  void encode(Serializer serializer, NbtElement value) {
+  void encode(SerializationContext ctx, Serializer serializer, NbtElement value) {
     if (serializer.selfDescribing) {
-      NbtDeserializer(value).any(serializer);
+      NbtDeserializer(value).any(ctx, serializer);
     } else {
       final writer = NbtWriter()..i8(value.type.index);
       value.write(writer);
 
-      serializer.bytes(writer.result);
+      serializer.bytes(ctx, writer.result);
     }
   }
 
   @override
-  NbtElement decode(Deserializer deserializer) {
+  NbtElement decode(SerializationContext ctx, Deserializer deserializer) {
     if (deserializer is SelfDescribingDeserializer) {
       final visitor = NbtSerializer();
-      deserializer.any(visitor);
+      deserializer.any(ctx, visitor);
       return visitor.result;
     } else {
-      final reader = NbtReader(ByteData.view(deserializer.bytes().buffer));
+      final reader = NbtReader(ByteData.view(deserializer.bytes(ctx).buffer));
       return reader.nbtElement(NbtElementType.byId(reader.i8()));
     }
   }

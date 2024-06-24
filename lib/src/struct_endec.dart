@@ -1,7 +1,6 @@
-import 'package:endec/src/deserializer.dart';
-import 'package:endec/src/serializer.dart';
+import 'package:endec/endec.dart';
 
-import 'endec_base.dart';
+import 'serialization_context.dart';
 
 extension Field<F> on Endec<F> {
   StructField<S, F> fieldOf<S>(String name, F Function(S struct) getter, {F Function()? defaultValueFactory}) =>
@@ -10,25 +9,27 @@ extension Field<F> on Endec<F> {
           : StructField.required(name, this, getter);
 }
 
-typedef StructEncoder<S> = void Function(StructSerializer struct, S value);
-typedef StructDecoder<S> = S Function(StructDeserializer struct);
+typedef StructEncoder<S> = void Function(
+    SerializationContext ctx, Serializer serializer, StructSerializer struct, S value);
+typedef StructDecoder<S> = S Function(SerializationContext ctx, Deserializer deserializer, StructDeserializer struct);
 
 abstract class StructEndec<S> with Endec<S> {
   StructEndec();
   factory StructEndec.of(StructEncoder<S> encoder, StructDecoder<S> decoder) => _SimpleStructEndec(encoder, decoder);
 
-  void encodeStruct(StructSerializer struct, S value);
-  S decodeStruct(StructDeserializer struct);
+  void encodeStruct(SerializationContext ctx, Serializer serializer, StructSerializer struct, S value);
+  S decodeStruct(SerializationContext ctx, Deserializer deserializer, StructDeserializer struct);
 
   @override
-  void encode(Serializer serializer, S value) {
+  void encode(SerializationContext ctx, Serializer serializer, S value) {
     final struct = serializer.struct();
-    encodeStruct(struct, value);
+    encodeStruct(ctx, serializer, struct, value);
     struct.end();
   }
 
   @override
-  S decode(Deserializer deserializer) => decodeStruct(deserializer.struct());
+  S decode(SerializationContext ctx, Deserializer deserializer) =>
+      decodeStruct(ctx, deserializer, deserializer.struct());
 
   @override
   StructEndec<U> xmap<U>(U Function(S self) to, S Function(U other) from) => _XmapStructEndec(this, to, from);
@@ -43,10 +44,12 @@ class _SimpleStructEndec<S> extends StructEndec<S> {
   _SimpleStructEndec(this._encoder, this._decoder);
 
   @override
-  void encodeStruct(StructSerializer struct, S value) => _encoder(struct, value);
+  void encodeStruct(SerializationContext ctx, Serializer serializer, StructSerializer struct, S value) =>
+      _encoder(ctx, serializer, struct, value);
 
   @override
-  S decodeStruct(StructDeserializer struct) => _decoder(struct);
+  S decodeStruct(SerializationContext ctx, Deserializer deserializer, StructDeserializer struct) =>
+      _decoder(ctx, deserializer, struct);
 }
 
 class _XmapStructEndec<T, U> extends StructEndec<U> {
@@ -57,9 +60,12 @@ class _XmapStructEndec<T, U> extends StructEndec<U> {
   _XmapStructEndec(this._sourceEndec, this._to, this._from);
 
   @override
-  void encodeStruct(StructSerializer struct, U value) => _sourceEndec.encodeStruct(struct, _from(value));
+  void encodeStruct(SerializationContext ctx, Serializer serializer, StructSerializer struct, U value) =>
+      _sourceEndec.encodeStruct(ctx, serializer, struct, _from(value));
+
   @override
-  U decodeStruct(StructDeserializer struct) => _to(_sourceEndec.decodeStruct(struct));
+  U decodeStruct(SerializationContext ctx, Deserializer deserializer, StructDeserializer struct) =>
+      _to(_sourceEndec.decodeStruct(ctx, deserializer, struct));
 }
 
 abstract final class StructField<S, F> {
@@ -81,8 +87,8 @@ abstract final class StructField<S, F> {
     F Function(S struct) getter,
   ) = _FlatStructField.new;
 
-  void encodeField(StructSerializer struct, S instance);
-  F decodeField(StructDeserializer struct);
+  void encodeField(SerializationContext ctx, Serializer serializer, StructSerializer struct, S value);
+  F decodeField(SerializationContext ctx, Deserializer deserializer, StructDeserializer struct);
 }
 
 final class _GenericStructField<S, F> implements StructField<S, F> {
@@ -95,13 +101,14 @@ final class _GenericStructField<S, F> implements StructField<S, F> {
   _GenericStructField.optional(this._name, this._endec, this._getter, this._defaultValueFactory);
 
   @override
-  void encodeField(StructSerializer struct, S instance) =>
-      struct.field(_name, _endec, _getter(instance), optional: _defaultValueFactory != null);
+  void encodeField(SerializationContext ctx, Serializer serializer, StructSerializer struct, S instance) =>
+      struct.field(_name, ctx, _endec, _getter(instance), optional: _defaultValueFactory != null);
 
   @override
-  F decodeField(StructDeserializer struct) => _defaultValueFactory != null
-      ? struct.optionalField(_name, _endec, _defaultValueFactory!)
-      : struct.field(_name, _endec);
+  F decodeField(SerializationContext ctx, Deserializer deserializer, StructDeserializer struct) =>
+      _defaultValueFactory != null
+          ? struct.optionalField(_name, ctx, _endec, _defaultValueFactory!)
+          : struct.field(_name, ctx, _endec);
 }
 
 final class _FlatStructField<S, F> implements StructField<S, F> {
@@ -111,9 +118,12 @@ final class _FlatStructField<S, F> implements StructField<S, F> {
   _FlatStructField(this._endec, this._getter);
 
   @override
-  void encodeField(StructSerializer struct, S instance) => _endec.encodeStruct(struct, _getter(instance));
+  void encodeField(SerializationContext ctx, Serializer serializer, StructSerializer struct, S instance) =>
+      _endec.encodeStruct(ctx, serializer, struct, _getter(instance));
+
   @override
-  F decodeField(StructDeserializer struct) => _endec.decodeStruct(struct);
+  F decodeField(SerializationContext ctx, Deserializer deserializer, StructDeserializer struct) =>
+      _endec.decodeStruct(ctx, deserializer, struct);
 }
 
 StructEndecBuilder<S> structEndec<S>() => StructEndecBuilder._();
@@ -121,13 +131,13 @@ StructEndecBuilder<S> structEndec<S>() => StructEndecBuilder._();
 class StructEndecBuilder<S> {
   StructEndecBuilder._();
 
-  Endec<S> with1Field<F1>(
+  StructEndec<S> with1Field<F1>(
     StructField<S, F1> f1,
     S Function(F1) constructor,
   ) =>
       StructEndec.of(
-        (struct, value) => f1.encodeField(struct, value),
-        (struct) => constructor(f1.decodeField(struct)),
+        (ctx, serializer, struct, value) => f1.encodeField(ctx, serializer, struct, value),
+        (ctx, deserializer, struct) => constructor(f1.decodeField(ctx, deserializer, struct)),
       );
 
   StructEndec<S> with2Fields<F1, F2>(
@@ -135,13 +145,13 @@ class StructEndecBuilder<S> {
     StructField<S, F2> f2,
     S Function(F1, F2) constructor,
   ) =>
-      StructEndec.of((struct, value) {
-        f1.encodeField(struct, value);
-        f2.encodeField(struct, value);
-      }, (struct) {
+      StructEndec.of((ctx, serializer, struct, value) {
+        f1.encodeField(ctx, serializer, struct, value);
+        f2.encodeField(ctx, serializer, struct, value);
+      }, (ctx, deserializer, struct) {
         return constructor(
-          f1.decodeField(struct),
-          f2.decodeField(struct),
+          f1.decodeField(ctx, deserializer, struct),
+          f2.decodeField(ctx, deserializer, struct),
         );
       });
 
@@ -151,15 +161,15 @@ class StructEndecBuilder<S> {
     StructField<S, F3> f3,
     S Function(F1, F2, F3) constructor,
   ) =>
-      StructEndec.of((struct, value) {
-        f1.encodeField(struct, value);
-        f2.encodeField(struct, value);
-        f3.encodeField(struct, value);
-      }, (struct) {
+      StructEndec.of((ctx, serializer, struct, value) {
+        f1.encodeField(ctx, serializer, struct, value);
+        f2.encodeField(ctx, serializer, struct, value);
+        f3.encodeField(ctx, serializer, struct, value);
+      }, (ctx, deserializer, struct) {
         return constructor(
-          f1.decodeField(struct),
-          f2.decodeField(struct),
-          f3.decodeField(struct),
+          f1.decodeField(ctx, deserializer, struct),
+          f2.decodeField(ctx, deserializer, struct),
+          f3.decodeField(ctx, deserializer, struct),
         );
       });
 
@@ -170,17 +180,17 @@ class StructEndecBuilder<S> {
     StructField<S, F4> f4,
     S Function(F1, F2, F3, F4) constructor,
   ) =>
-      StructEndec.of((struct, value) {
-        f1.encodeField(struct, value);
-        f2.encodeField(struct, value);
-        f3.encodeField(struct, value);
-        f4.encodeField(struct, value);
-      }, (struct) {
+      StructEndec.of((ctx, serializer, struct, value) {
+        f1.encodeField(ctx, serializer, struct, value);
+        f2.encodeField(ctx, serializer, struct, value);
+        f3.encodeField(ctx, serializer, struct, value);
+        f4.encodeField(ctx, serializer, struct, value);
+      }, (ctx, deserializer, struct) {
         return constructor(
-          f1.decodeField(struct),
-          f2.decodeField(struct),
-          f3.decodeField(struct),
-          f4.decodeField(struct),
+          f1.decodeField(ctx, deserializer, struct),
+          f2.decodeField(ctx, deserializer, struct),
+          f3.decodeField(ctx, deserializer, struct),
+          f4.decodeField(ctx, deserializer, struct),
         );
       });
 
@@ -192,19 +202,19 @@ class StructEndecBuilder<S> {
     StructField<S, F5> f5,
     S Function(F1, F2, F3, F4, F5) constructor,
   ) =>
-      StructEndec.of((struct, value) {
-        f1.encodeField(struct, value);
-        f2.encodeField(struct, value);
-        f3.encodeField(struct, value);
-        f4.encodeField(struct, value);
-        f5.encodeField(struct, value);
-      }, (struct) {
+      StructEndec.of((ctx, serializer, struct, value) {
+        f1.encodeField(ctx, serializer, struct, value);
+        f2.encodeField(ctx, serializer, struct, value);
+        f3.encodeField(ctx, serializer, struct, value);
+        f4.encodeField(ctx, serializer, struct, value);
+        f5.encodeField(ctx, serializer, struct, value);
+      }, (ctx, deserializer, struct) {
         return constructor(
-          f1.decodeField(struct),
-          f2.decodeField(struct),
-          f3.decodeField(struct),
-          f4.decodeField(struct),
-          f5.decodeField(struct),
+          f1.decodeField(ctx, deserializer, struct),
+          f2.decodeField(ctx, deserializer, struct),
+          f3.decodeField(ctx, deserializer, struct),
+          f4.decodeField(ctx, deserializer, struct),
+          f5.decodeField(ctx, deserializer, struct),
         );
       });
 
@@ -217,21 +227,21 @@ class StructEndecBuilder<S> {
     StructField<S, F6> f6,
     S Function(F1, F2, F3, F4, F5, F6) constructor,
   ) =>
-      StructEndec.of((struct, value) {
-        f1.encodeField(struct, value);
-        f2.encodeField(struct, value);
-        f3.encodeField(struct, value);
-        f4.encodeField(struct, value);
-        f5.encodeField(struct, value);
-        f6.encodeField(struct, value);
-      }, (struct) {
+      StructEndec.of((ctx, serializer, struct, value) {
+        f1.encodeField(ctx, serializer, struct, value);
+        f2.encodeField(ctx, serializer, struct, value);
+        f3.encodeField(ctx, serializer, struct, value);
+        f4.encodeField(ctx, serializer, struct, value);
+        f5.encodeField(ctx, serializer, struct, value);
+        f6.encodeField(ctx, serializer, struct, value);
+      }, (ctx, deserializer, struct) {
         return constructor(
-          f1.decodeField(struct),
-          f2.decodeField(struct),
-          f3.decodeField(struct),
-          f4.decodeField(struct),
-          f5.decodeField(struct),
-          f6.decodeField(struct),
+          f1.decodeField(ctx, deserializer, struct),
+          f2.decodeField(ctx, deserializer, struct),
+          f3.decodeField(ctx, deserializer, struct),
+          f4.decodeField(ctx, deserializer, struct),
+          f5.decodeField(ctx, deserializer, struct),
+          f6.decodeField(ctx, deserializer, struct),
         );
       });
 
@@ -245,23 +255,23 @@ class StructEndecBuilder<S> {
     StructField<S, F7> f7,
     S Function(F1, F2, F3, F4, F5, F6, F7) constructor,
   ) =>
-      StructEndec.of((struct, value) {
-        f1.encodeField(struct, value);
-        f2.encodeField(struct, value);
-        f3.encodeField(struct, value);
-        f4.encodeField(struct, value);
-        f5.encodeField(struct, value);
-        f6.encodeField(struct, value);
-        f7.encodeField(struct, value);
-      }, (struct) {
+      StructEndec.of((ctx, serializer, struct, value) {
+        f1.encodeField(ctx, serializer, struct, value);
+        f2.encodeField(ctx, serializer, struct, value);
+        f3.encodeField(ctx, serializer, struct, value);
+        f4.encodeField(ctx, serializer, struct, value);
+        f5.encodeField(ctx, serializer, struct, value);
+        f6.encodeField(ctx, serializer, struct, value);
+        f7.encodeField(ctx, serializer, struct, value);
+      }, (ctx, deserializer, struct) {
         return constructor(
-          f1.decodeField(struct),
-          f2.decodeField(struct),
-          f3.decodeField(struct),
-          f4.decodeField(struct),
-          f5.decodeField(struct),
-          f6.decodeField(struct),
-          f7.decodeField(struct),
+          f1.decodeField(ctx, deserializer, struct),
+          f2.decodeField(ctx, deserializer, struct),
+          f3.decodeField(ctx, deserializer, struct),
+          f4.decodeField(ctx, deserializer, struct),
+          f5.decodeField(ctx, deserializer, struct),
+          f6.decodeField(ctx, deserializer, struct),
+          f7.decodeField(ctx, deserializer, struct),
         );
       });
 
@@ -276,25 +286,25 @@ class StructEndecBuilder<S> {
     StructField<S, F8> f8,
     S Function(F1, F2, F3, F4, F5, F6, F7, F8) constructor,
   ) =>
-      StructEndec.of((struct, value) {
-        f1.encodeField(struct, value);
-        f2.encodeField(struct, value);
-        f3.encodeField(struct, value);
-        f4.encodeField(struct, value);
-        f5.encodeField(struct, value);
-        f6.encodeField(struct, value);
-        f7.encodeField(struct, value);
-        f8.encodeField(struct, value);
-      }, (struct) {
+      StructEndec.of((ctx, serializer, struct, value) {
+        f1.encodeField(ctx, serializer, struct, value);
+        f2.encodeField(ctx, serializer, struct, value);
+        f3.encodeField(ctx, serializer, struct, value);
+        f4.encodeField(ctx, serializer, struct, value);
+        f5.encodeField(ctx, serializer, struct, value);
+        f6.encodeField(ctx, serializer, struct, value);
+        f7.encodeField(ctx, serializer, struct, value);
+        f8.encodeField(ctx, serializer, struct, value);
+      }, (ctx, deserializer, struct) {
         return constructor(
-          f1.decodeField(struct),
-          f2.decodeField(struct),
-          f3.decodeField(struct),
-          f4.decodeField(struct),
-          f5.decodeField(struct),
-          f6.decodeField(struct),
-          f7.decodeField(struct),
-          f8.decodeField(struct),
+          f1.decodeField(ctx, deserializer, struct),
+          f2.decodeField(ctx, deserializer, struct),
+          f3.decodeField(ctx, deserializer, struct),
+          f4.decodeField(ctx, deserializer, struct),
+          f5.decodeField(ctx, deserializer, struct),
+          f6.decodeField(ctx, deserializer, struct),
+          f7.decodeField(ctx, deserializer, struct),
+          f8.decodeField(ctx, deserializer, struct),
         );
       });
 
@@ -310,27 +320,27 @@ class StructEndecBuilder<S> {
     StructField<S, F9> f9,
     S Function(F1, F2, F3, F4, F5, F6, F7, F8, F9) constructor,
   ) =>
-      StructEndec.of((struct, value) {
-        f1.encodeField(struct, value);
-        f2.encodeField(struct, value);
-        f3.encodeField(struct, value);
-        f4.encodeField(struct, value);
-        f5.encodeField(struct, value);
-        f6.encodeField(struct, value);
-        f7.encodeField(struct, value);
-        f8.encodeField(struct, value);
-        f9.encodeField(struct, value);
-      }, (struct) {
+      StructEndec.of((ctx, serializer, struct, value) {
+        f1.encodeField(ctx, serializer, struct, value);
+        f2.encodeField(ctx, serializer, struct, value);
+        f3.encodeField(ctx, serializer, struct, value);
+        f4.encodeField(ctx, serializer, struct, value);
+        f5.encodeField(ctx, serializer, struct, value);
+        f6.encodeField(ctx, serializer, struct, value);
+        f7.encodeField(ctx, serializer, struct, value);
+        f8.encodeField(ctx, serializer, struct, value);
+        f9.encodeField(ctx, serializer, struct, value);
+      }, (ctx, deserializer, struct) {
         return constructor(
-          f1.decodeField(struct),
-          f2.decodeField(struct),
-          f3.decodeField(struct),
-          f4.decodeField(struct),
-          f5.decodeField(struct),
-          f6.decodeField(struct),
-          f7.decodeField(struct),
-          f8.decodeField(struct),
-          f9.decodeField(struct),
+          f1.decodeField(ctx, deserializer, struct),
+          f2.decodeField(ctx, deserializer, struct),
+          f3.decodeField(ctx, deserializer, struct),
+          f4.decodeField(ctx, deserializer, struct),
+          f5.decodeField(ctx, deserializer, struct),
+          f6.decodeField(ctx, deserializer, struct),
+          f7.decodeField(ctx, deserializer, struct),
+          f8.decodeField(ctx, deserializer, struct),
+          f9.decodeField(ctx, deserializer, struct),
         );
       });
 
@@ -347,29 +357,29 @@ class StructEndecBuilder<S> {
     StructField<S, F10> f10,
     S Function(F1, F2, F3, F4, F5, F6, F7, F8, F9, F10) constructor,
   ) =>
-      StructEndec.of((struct, value) {
-        f1.encodeField(struct, value);
-        f2.encodeField(struct, value);
-        f3.encodeField(struct, value);
-        f4.encodeField(struct, value);
-        f5.encodeField(struct, value);
-        f6.encodeField(struct, value);
-        f7.encodeField(struct, value);
-        f8.encodeField(struct, value);
-        f9.encodeField(struct, value);
-        f10.encodeField(struct, value);
-      }, (struct) {
+      StructEndec.of((ctx, serializer, struct, value) {
+        f1.encodeField(ctx, serializer, struct, value);
+        f2.encodeField(ctx, serializer, struct, value);
+        f3.encodeField(ctx, serializer, struct, value);
+        f4.encodeField(ctx, serializer, struct, value);
+        f5.encodeField(ctx, serializer, struct, value);
+        f6.encodeField(ctx, serializer, struct, value);
+        f7.encodeField(ctx, serializer, struct, value);
+        f8.encodeField(ctx, serializer, struct, value);
+        f9.encodeField(ctx, serializer, struct, value);
+        f10.encodeField(ctx, serializer, struct, value);
+      }, (ctx, deserializer, struct) {
         return constructor(
-          f1.decodeField(struct),
-          f2.decodeField(struct),
-          f3.decodeField(struct),
-          f4.decodeField(struct),
-          f5.decodeField(struct),
-          f6.decodeField(struct),
-          f7.decodeField(struct),
-          f8.decodeField(struct),
-          f9.decodeField(struct),
-          f10.decodeField(struct),
+          f1.decodeField(ctx, deserializer, struct),
+          f2.decodeField(ctx, deserializer, struct),
+          f3.decodeField(ctx, deserializer, struct),
+          f4.decodeField(ctx, deserializer, struct),
+          f5.decodeField(ctx, deserializer, struct),
+          f6.decodeField(ctx, deserializer, struct),
+          f7.decodeField(ctx, deserializer, struct),
+          f8.decodeField(ctx, deserializer, struct),
+          f9.decodeField(ctx, deserializer, struct),
+          f10.decodeField(ctx, deserializer, struct),
         );
       });
 
@@ -387,31 +397,31 @@ class StructEndecBuilder<S> {
     StructField<S, F11> f11,
     S Function(F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11) constructor,
   ) =>
-      StructEndec.of((struct, value) {
-        f1.encodeField(struct, value);
-        f2.encodeField(struct, value);
-        f3.encodeField(struct, value);
-        f4.encodeField(struct, value);
-        f5.encodeField(struct, value);
-        f6.encodeField(struct, value);
-        f7.encodeField(struct, value);
-        f8.encodeField(struct, value);
-        f9.encodeField(struct, value);
-        f10.encodeField(struct, value);
-        f11.encodeField(struct, value);
-      }, (struct) {
+      StructEndec.of((ctx, serializer, struct, value) {
+        f1.encodeField(ctx, serializer, struct, value);
+        f2.encodeField(ctx, serializer, struct, value);
+        f3.encodeField(ctx, serializer, struct, value);
+        f4.encodeField(ctx, serializer, struct, value);
+        f5.encodeField(ctx, serializer, struct, value);
+        f6.encodeField(ctx, serializer, struct, value);
+        f7.encodeField(ctx, serializer, struct, value);
+        f8.encodeField(ctx, serializer, struct, value);
+        f9.encodeField(ctx, serializer, struct, value);
+        f10.encodeField(ctx, serializer, struct, value);
+        f11.encodeField(ctx, serializer, struct, value);
+      }, (ctx, deserializer, struct) {
         return constructor(
-          f1.decodeField(struct),
-          f2.decodeField(struct),
-          f3.decodeField(struct),
-          f4.decodeField(struct),
-          f5.decodeField(struct),
-          f6.decodeField(struct),
-          f7.decodeField(struct),
-          f8.decodeField(struct),
-          f9.decodeField(struct),
-          f10.decodeField(struct),
-          f11.decodeField(struct),
+          f1.decodeField(ctx, deserializer, struct),
+          f2.decodeField(ctx, deserializer, struct),
+          f3.decodeField(ctx, deserializer, struct),
+          f4.decodeField(ctx, deserializer, struct),
+          f5.decodeField(ctx, deserializer, struct),
+          f6.decodeField(ctx, deserializer, struct),
+          f7.decodeField(ctx, deserializer, struct),
+          f8.decodeField(ctx, deserializer, struct),
+          f9.decodeField(ctx, deserializer, struct),
+          f10.decodeField(ctx, deserializer, struct),
+          f11.decodeField(ctx, deserializer, struct),
         );
       });
 
@@ -430,33 +440,33 @@ class StructEndecBuilder<S> {
     StructField<S, F12> f12,
     S Function(F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12) constructor,
   ) =>
-      StructEndec.of((struct, value) {
-        f1.encodeField(struct, value);
-        f2.encodeField(struct, value);
-        f3.encodeField(struct, value);
-        f4.encodeField(struct, value);
-        f5.encodeField(struct, value);
-        f6.encodeField(struct, value);
-        f7.encodeField(struct, value);
-        f8.encodeField(struct, value);
-        f9.encodeField(struct, value);
-        f10.encodeField(struct, value);
-        f11.encodeField(struct, value);
-        f12.encodeField(struct, value);
-      }, (struct) {
+      StructEndec.of((ctx, serializer, struct, value) {
+        f1.encodeField(ctx, serializer, struct, value);
+        f2.encodeField(ctx, serializer, struct, value);
+        f3.encodeField(ctx, serializer, struct, value);
+        f4.encodeField(ctx, serializer, struct, value);
+        f5.encodeField(ctx, serializer, struct, value);
+        f6.encodeField(ctx, serializer, struct, value);
+        f7.encodeField(ctx, serializer, struct, value);
+        f8.encodeField(ctx, serializer, struct, value);
+        f9.encodeField(ctx, serializer, struct, value);
+        f10.encodeField(ctx, serializer, struct, value);
+        f11.encodeField(ctx, serializer, struct, value);
+        f12.encodeField(ctx, serializer, struct, value);
+      }, (ctx, deserializer, struct) {
         return constructor(
-          f1.decodeField(struct),
-          f2.decodeField(struct),
-          f3.decodeField(struct),
-          f4.decodeField(struct),
-          f5.decodeField(struct),
-          f6.decodeField(struct),
-          f7.decodeField(struct),
-          f8.decodeField(struct),
-          f9.decodeField(struct),
-          f10.decodeField(struct),
-          f11.decodeField(struct),
-          f12.decodeField(struct),
+          f1.decodeField(ctx, deserializer, struct),
+          f2.decodeField(ctx, deserializer, struct),
+          f3.decodeField(ctx, deserializer, struct),
+          f4.decodeField(ctx, deserializer, struct),
+          f5.decodeField(ctx, deserializer, struct),
+          f6.decodeField(ctx, deserializer, struct),
+          f7.decodeField(ctx, deserializer, struct),
+          f8.decodeField(ctx, deserializer, struct),
+          f9.decodeField(ctx, deserializer, struct),
+          f10.decodeField(ctx, deserializer, struct),
+          f11.decodeField(ctx, deserializer, struct),
+          f12.decodeField(ctx, deserializer, struct),
         );
       });
 
@@ -476,35 +486,35 @@ class StructEndecBuilder<S> {
     StructField<S, F13> f13,
     S Function(F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13) constructor,
   ) =>
-      StructEndec.of((struct, value) {
-        f1.encodeField(struct, value);
-        f2.encodeField(struct, value);
-        f3.encodeField(struct, value);
-        f4.encodeField(struct, value);
-        f5.encodeField(struct, value);
-        f6.encodeField(struct, value);
-        f7.encodeField(struct, value);
-        f8.encodeField(struct, value);
-        f9.encodeField(struct, value);
-        f10.encodeField(struct, value);
-        f11.encodeField(struct, value);
-        f12.encodeField(struct, value);
-        f13.encodeField(struct, value);
-      }, (struct) {
+      StructEndec.of((ctx, serializer, struct, value) {
+        f1.encodeField(ctx, serializer, struct, value);
+        f2.encodeField(ctx, serializer, struct, value);
+        f3.encodeField(ctx, serializer, struct, value);
+        f4.encodeField(ctx, serializer, struct, value);
+        f5.encodeField(ctx, serializer, struct, value);
+        f6.encodeField(ctx, serializer, struct, value);
+        f7.encodeField(ctx, serializer, struct, value);
+        f8.encodeField(ctx, serializer, struct, value);
+        f9.encodeField(ctx, serializer, struct, value);
+        f10.encodeField(ctx, serializer, struct, value);
+        f11.encodeField(ctx, serializer, struct, value);
+        f12.encodeField(ctx, serializer, struct, value);
+        f13.encodeField(ctx, serializer, struct, value);
+      }, (ctx, deserializer, struct) {
         return constructor(
-          f1.decodeField(struct),
-          f2.decodeField(struct),
-          f3.decodeField(struct),
-          f4.decodeField(struct),
-          f5.decodeField(struct),
-          f6.decodeField(struct),
-          f7.decodeField(struct),
-          f8.decodeField(struct),
-          f9.decodeField(struct),
-          f10.decodeField(struct),
-          f11.decodeField(struct),
-          f12.decodeField(struct),
-          f13.decodeField(struct),
+          f1.decodeField(ctx, deserializer, struct),
+          f2.decodeField(ctx, deserializer, struct),
+          f3.decodeField(ctx, deserializer, struct),
+          f4.decodeField(ctx, deserializer, struct),
+          f5.decodeField(ctx, deserializer, struct),
+          f6.decodeField(ctx, deserializer, struct),
+          f7.decodeField(ctx, deserializer, struct),
+          f8.decodeField(ctx, deserializer, struct),
+          f9.decodeField(ctx, deserializer, struct),
+          f10.decodeField(ctx, deserializer, struct),
+          f11.decodeField(ctx, deserializer, struct),
+          f12.decodeField(ctx, deserializer, struct),
+          f13.decodeField(ctx, deserializer, struct),
         );
       });
 
@@ -525,37 +535,37 @@ class StructEndecBuilder<S> {
     StructField<S, F14> f14,
     S Function(F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14) constructor,
   ) =>
-      StructEndec.of((struct, value) {
-        f1.encodeField(struct, value);
-        f2.encodeField(struct, value);
-        f3.encodeField(struct, value);
-        f4.encodeField(struct, value);
-        f5.encodeField(struct, value);
-        f6.encodeField(struct, value);
-        f7.encodeField(struct, value);
-        f8.encodeField(struct, value);
-        f9.encodeField(struct, value);
-        f10.encodeField(struct, value);
-        f11.encodeField(struct, value);
-        f12.encodeField(struct, value);
-        f13.encodeField(struct, value);
-        f14.encodeField(struct, value);
-      }, (struct) {
+      StructEndec.of((ctx, serializer, struct, value) {
+        f1.encodeField(ctx, serializer, struct, value);
+        f2.encodeField(ctx, serializer, struct, value);
+        f3.encodeField(ctx, serializer, struct, value);
+        f4.encodeField(ctx, serializer, struct, value);
+        f5.encodeField(ctx, serializer, struct, value);
+        f6.encodeField(ctx, serializer, struct, value);
+        f7.encodeField(ctx, serializer, struct, value);
+        f8.encodeField(ctx, serializer, struct, value);
+        f9.encodeField(ctx, serializer, struct, value);
+        f10.encodeField(ctx, serializer, struct, value);
+        f11.encodeField(ctx, serializer, struct, value);
+        f12.encodeField(ctx, serializer, struct, value);
+        f13.encodeField(ctx, serializer, struct, value);
+        f14.encodeField(ctx, serializer, struct, value);
+      }, (ctx, deserializer, struct) {
         return constructor(
-          f1.decodeField(struct),
-          f2.decodeField(struct),
-          f3.decodeField(struct),
-          f4.decodeField(struct),
-          f5.decodeField(struct),
-          f6.decodeField(struct),
-          f7.decodeField(struct),
-          f8.decodeField(struct),
-          f9.decodeField(struct),
-          f10.decodeField(struct),
-          f11.decodeField(struct),
-          f12.decodeField(struct),
-          f13.decodeField(struct),
-          f14.decodeField(struct),
+          f1.decodeField(ctx, deserializer, struct),
+          f2.decodeField(ctx, deserializer, struct),
+          f3.decodeField(ctx, deserializer, struct),
+          f4.decodeField(ctx, deserializer, struct),
+          f5.decodeField(ctx, deserializer, struct),
+          f6.decodeField(ctx, deserializer, struct),
+          f7.decodeField(ctx, deserializer, struct),
+          f8.decodeField(ctx, deserializer, struct),
+          f9.decodeField(ctx, deserializer, struct),
+          f10.decodeField(ctx, deserializer, struct),
+          f11.decodeField(ctx, deserializer, struct),
+          f12.decodeField(ctx, deserializer, struct),
+          f13.decodeField(ctx, deserializer, struct),
+          f14.decodeField(ctx, deserializer, struct),
         );
       });
 
@@ -577,39 +587,39 @@ class StructEndecBuilder<S> {
     StructField<S, F15> f15,
     S Function(F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15) constructor,
   ) =>
-      StructEndec.of((struct, value) {
-        f1.encodeField(struct, value);
-        f2.encodeField(struct, value);
-        f3.encodeField(struct, value);
-        f4.encodeField(struct, value);
-        f5.encodeField(struct, value);
-        f6.encodeField(struct, value);
-        f7.encodeField(struct, value);
-        f8.encodeField(struct, value);
-        f9.encodeField(struct, value);
-        f10.encodeField(struct, value);
-        f11.encodeField(struct, value);
-        f12.encodeField(struct, value);
-        f13.encodeField(struct, value);
-        f14.encodeField(struct, value);
-        f15.encodeField(struct, value);
-      }, (struct) {
+      StructEndec.of((ctx, serializer, struct, value) {
+        f1.encodeField(ctx, serializer, struct, value);
+        f2.encodeField(ctx, serializer, struct, value);
+        f3.encodeField(ctx, serializer, struct, value);
+        f4.encodeField(ctx, serializer, struct, value);
+        f5.encodeField(ctx, serializer, struct, value);
+        f6.encodeField(ctx, serializer, struct, value);
+        f7.encodeField(ctx, serializer, struct, value);
+        f8.encodeField(ctx, serializer, struct, value);
+        f9.encodeField(ctx, serializer, struct, value);
+        f10.encodeField(ctx, serializer, struct, value);
+        f11.encodeField(ctx, serializer, struct, value);
+        f12.encodeField(ctx, serializer, struct, value);
+        f13.encodeField(ctx, serializer, struct, value);
+        f14.encodeField(ctx, serializer, struct, value);
+        f15.encodeField(ctx, serializer, struct, value);
+      }, (ctx, deserializer, struct) {
         return constructor(
-          f1.decodeField(struct),
-          f2.decodeField(struct),
-          f3.decodeField(struct),
-          f4.decodeField(struct),
-          f5.decodeField(struct),
-          f6.decodeField(struct),
-          f7.decodeField(struct),
-          f8.decodeField(struct),
-          f9.decodeField(struct),
-          f10.decodeField(struct),
-          f11.decodeField(struct),
-          f12.decodeField(struct),
-          f13.decodeField(struct),
-          f14.decodeField(struct),
-          f15.decodeField(struct),
+          f1.decodeField(ctx, deserializer, struct),
+          f2.decodeField(ctx, deserializer, struct),
+          f3.decodeField(ctx, deserializer, struct),
+          f4.decodeField(ctx, deserializer, struct),
+          f5.decodeField(ctx, deserializer, struct),
+          f6.decodeField(ctx, deserializer, struct),
+          f7.decodeField(ctx, deserializer, struct),
+          f8.decodeField(ctx, deserializer, struct),
+          f9.decodeField(ctx, deserializer, struct),
+          f10.decodeField(ctx, deserializer, struct),
+          f11.decodeField(ctx, deserializer, struct),
+          f12.decodeField(ctx, deserializer, struct),
+          f13.decodeField(ctx, deserializer, struct),
+          f14.decodeField(ctx, deserializer, struct),
+          f15.decodeField(ctx, deserializer, struct),
         );
       });
 
@@ -632,41 +642,41 @@ class StructEndecBuilder<S> {
     StructField<S, F16> f16,
     S Function(F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16) constructor,
   ) =>
-      StructEndec.of((struct, value) {
-        f1.encodeField(struct, value);
-        f2.encodeField(struct, value);
-        f3.encodeField(struct, value);
-        f4.encodeField(struct, value);
-        f5.encodeField(struct, value);
-        f6.encodeField(struct, value);
-        f7.encodeField(struct, value);
-        f8.encodeField(struct, value);
-        f9.encodeField(struct, value);
-        f10.encodeField(struct, value);
-        f11.encodeField(struct, value);
-        f12.encodeField(struct, value);
-        f13.encodeField(struct, value);
-        f14.encodeField(struct, value);
-        f15.encodeField(struct, value);
-        f16.encodeField(struct, value);
-      }, (struct) {
+      StructEndec.of((ctx, serializer, struct, value) {
+        f1.encodeField(ctx, serializer, struct, value);
+        f2.encodeField(ctx, serializer, struct, value);
+        f3.encodeField(ctx, serializer, struct, value);
+        f4.encodeField(ctx, serializer, struct, value);
+        f5.encodeField(ctx, serializer, struct, value);
+        f6.encodeField(ctx, serializer, struct, value);
+        f7.encodeField(ctx, serializer, struct, value);
+        f8.encodeField(ctx, serializer, struct, value);
+        f9.encodeField(ctx, serializer, struct, value);
+        f10.encodeField(ctx, serializer, struct, value);
+        f11.encodeField(ctx, serializer, struct, value);
+        f12.encodeField(ctx, serializer, struct, value);
+        f13.encodeField(ctx, serializer, struct, value);
+        f14.encodeField(ctx, serializer, struct, value);
+        f15.encodeField(ctx, serializer, struct, value);
+        f16.encodeField(ctx, serializer, struct, value);
+      }, (ctx, deserializer, struct) {
         return constructor(
-          f1.decodeField(struct),
-          f2.decodeField(struct),
-          f3.decodeField(struct),
-          f4.decodeField(struct),
-          f5.decodeField(struct),
-          f6.decodeField(struct),
-          f7.decodeField(struct),
-          f8.decodeField(struct),
-          f9.decodeField(struct),
-          f10.decodeField(struct),
-          f11.decodeField(struct),
-          f12.decodeField(struct),
-          f13.decodeField(struct),
-          f14.decodeField(struct),
-          f15.decodeField(struct),
-          f16.decodeField(struct),
+          f1.decodeField(ctx, deserializer, struct),
+          f2.decodeField(ctx, deserializer, struct),
+          f3.decodeField(ctx, deserializer, struct),
+          f4.decodeField(ctx, deserializer, struct),
+          f5.decodeField(ctx, deserializer, struct),
+          f6.decodeField(ctx, deserializer, struct),
+          f7.decodeField(ctx, deserializer, struct),
+          f8.decodeField(ctx, deserializer, struct),
+          f9.decodeField(ctx, deserializer, struct),
+          f10.decodeField(ctx, deserializer, struct),
+          f11.decodeField(ctx, deserializer, struct),
+          f12.decodeField(ctx, deserializer, struct),
+          f13.decodeField(ctx, deserializer, struct),
+          f14.decodeField(ctx, deserializer, struct),
+          f15.decodeField(ctx, deserializer, struct),
+          f16.decodeField(ctx, deserializer, struct),
         );
       });
 }

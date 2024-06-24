@@ -11,22 +11,22 @@ class JsonEndec with Endec<Object?> {
   const JsonEndec._();
 
   @override
-  void encode(Serializer serializer, Object? value) {
+  void encode(SerializationContext ctx, Serializer serializer, Object? value) {
     if (serializer.selfDescribing) {
-      JsonDeserializer(value).any(serializer);
+      JsonDeserializer(value).any(ctx, serializer);
     } else {
-      serializer.string(jsonEncode(value));
+      serializer.string(ctx, jsonEncode(value));
     }
   }
 
   @override
-  Object? decode(Deserializer deserializer) {
+  Object? decode(SerializationContext ctx, Deserializer deserializer) {
     if (deserializer is SelfDescribingDeserializer) {
       final visitor = JsonSerializer();
-      deserializer.any(visitor);
+      deserializer.any(ctx, visitor);
       return visitor.result;
     } else {
-      return jsonDecode(deserializer.string());
+      return jsonDecode(deserializer.string(ctx));
     }
   }
 }

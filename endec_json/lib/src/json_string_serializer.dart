@@ -7,9 +7,9 @@ import 'dart:typed_data';
 import 'package:endec/endec.dart';
 import 'package:meta/meta.dart';
 
-String toJson<T, S extends T>(Endec<T> endec, S value) {
+String toJson<T, S extends T>(Endec<T> endec, S value, {SerializationContext ctx = SerializationContext.empty}) {
   final serializer = JsonStringSerializer();
-  endec.encode(serializer, value);
+  endec.encode(ctx, serializer, value);
   return serializer._writer.toString();
 }
 
@@ -21,55 +21,56 @@ class JsonStringSerializer implements Serializer {
   JsonStringSerializer();
 
   @override
-  void i8(int value) => _writer.write(value.toString());
+  void i8(SerializationContext ctx, int value) => _writer.write(value.toString());
   @override
-  void u8(int value) => _writer.write(value.toString());
+  void u8(SerializationContext ctx, int value) => _writer.write(value.toString());
 
   @override
-  void i16(int value) => _writer.write(value.toString());
+  void i16(SerializationContext ctx, int value) => _writer.write(value.toString());
   @override
-  void u16(int value) => _writer.write(value.toString());
+  void u16(SerializationContext ctx, int value) => _writer.write(value.toString());
 
   @override
-  void i32(int value) => _writer.write(value.toString());
+  void i32(SerializationContext ctx, int value) => _writer.write(value.toString());
   @override
-  void u32(int value) => _writer.write(value.toString());
+  void u32(SerializationContext ctx, int value) => _writer.write(value.toString());
 
   @override
-  void i64(int value) => _writer.write(value.toString());
+  void i64(SerializationContext ctx, int value) => _writer.write(value.toString());
   @override
-  void u64(int value) => _writer.write(value.toString());
+  void u64(SerializationContext ctx, int value) => _writer.write(value.toString());
 
   @override
-  void f32(double value) => _writer.write(value.toString());
+  void f32(SerializationContext ctx, double value) => _writer.write(value.toString());
   @override
-  void f64(double value) => _writer.write(value.toString());
+  void f64(SerializationContext ctx, double value) => _writer.write(value.toString());
 
   @override
-  void boolean(bool value) => _writer.write(value.toString());
+  void boolean(SerializationContext ctx, bool value) => _writer.write(value.toString());
   @override
-  void string(String value) => _writer.write('"$value"');
+  void string(SerializationContext ctx, String value) => _writer.write('"$value"');
   @override
-  void bytes(Uint8List bytes) => _writer.write('[${bytes.map((e) => e.toString()).join(', ')}]');
+  void bytes(SerializationContext ctx, Uint8List bytes) =>
+      _writer.write('[${bytes.map((e) => e.toString()).join(', ')}]');
   @override
-  void optional<E>(Endec<E> endec, E? value) {
+  void optional<E>(SerializationContext ctx, Endec<E> endec, E? value) {
     if (value != null) {
-      endec.encode(this, value);
+      endec.encode(ctx, this, value);
     } else /*if (!isWritingOptionalStructField)*/ {
       _writer.write('null');
     }
   }
 
   @override
-  SequenceSerializer<E> sequence<E>(Endec<E> elementEndec, int length) {
+  SequenceSerializer<E> sequence<E>(SerializationContext ctx, Endec<E> elementEndec, int length) {
     _writer.startBlock('[', ']');
-    return _JsonStringSequenceSerializer(this, elementEndec);
+    return _JsonStringSequenceSerializer(this, ctx, elementEndec);
   }
 
   @override
-  MapSerializer<V> map<V>(Endec<V> valueEndec, int length) {
+  MapSerializer<V> map<V>(SerializationContext ctx, Endec<V> valueEndec, int length) {
     _writer.startBlock('{', '}');
-    return _JsonStringMapSerializer.map(this, valueEndec);
+    return _JsonStringMapSerializer.map(this, ctx, valueEndec);
   }
 
   @override
@@ -80,51 +81,55 @@ class JsonStringSerializer implements Serializer {
 }
 
 class _JsonStringMapSerializer<V> implements MapSerializer<V>, StructSerializer {
-  final JsonStringSerializer _context;
+  final JsonStringSerializer _serializer;
+  final SerializationContext? _ctx;
   final Endec<V>? _valueEndec;
   bool _hadElement = false;
 
-  _JsonStringMapSerializer.map(this._context, Endec<V> valueEndec) : _valueEndec = valueEndec;
-  _JsonStringMapSerializer.struct(this._context) : _valueEndec = null;
+  _JsonStringMapSerializer.map(this._serializer, this._ctx, Endec<V> valueEndec) : _valueEndec = valueEndec;
+  _JsonStringMapSerializer.struct(this._serializer)
+      : _ctx = null,
+        _valueEndec = null;
 
   @override
   void entry(String key, V value) {
-    if (_hadElement) _context._writer.write(', ');
+    if (_hadElement) _serializer._writer.write(', ');
 
-    _context._writer.write('"$key": ');
-    _valueEndec!.encode(_context, value);
+    _serializer._writer.write('"$key": ');
+    _valueEndec!.encode(_ctx!, _serializer, value);
     _hadElement = true;
   }
 
   @override
-  void field<F, _V extends F>(String key, Endec<F> endec, _V value, {bool optional = false}) {
-    if (_hadElement) _context._writer.writeln(', ');
-    _context._writer.write('"$key": ');
-    endec.encode(_context, value);
+  void field<F, _V extends F>(String key, SerializationContext ctx, Endec<F> endec, _V value, {bool optional = false}) {
+    if (_hadElement) _serializer._writer.writeln(', ');
+    _serializer._writer.write('"$key": ');
+    endec.encode(ctx, _serializer, value);
     _hadElement = true;
   }
 
   @override
-  void end() => _context._writer.endBlock();
+  void end() => _serializer._writer.endBlock();
 }
 
 class _JsonStringSequenceSerializer<V> implements SequenceSerializer<V> {
-  final JsonStringSerializer _context;
+  final JsonStringSerializer _serializer;
+  final SerializationContext _ctx;
   final Endec<V> _elementEndec;
   bool _hadElement = false;
 
-  _JsonStringSequenceSerializer(this._context, this._elementEndec);
+  _JsonStringSequenceSerializer(this._serializer, this._ctx, this._elementEndec);
 
   @override
   void element(V value) {
-    if (_hadElement) _context._writer.writeln(', ');
+    if (_hadElement) _serializer._writer.writeln(', ');
 
-    _elementEndec.encode(_context, value);
+    _elementEndec.encode(_ctx, _serializer, value);
     _hadElement = true;
   }
 
   @override
-  void end() => _context._writer.endBlock();
+  void end() => _serializer._writer.endBlock();
 }
 
 class _JsonWriter {

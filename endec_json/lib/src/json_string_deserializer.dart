@@ -1,7 +1,11 @@
+@experimental
+library json_string_deserializer;
+
 import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:endec/endec.dart';
+import 'package:meta/meta.dart';
 
 class JsonStringDeserializer implements Deserializer {
   static const _numberInitial = {_TokenType.digit, _TokenType.minus};
@@ -100,38 +104,38 @@ class JsonStringDeserializer implements Deserializer {
 
   //TODO: size checks
   @override
-  int i8() => _parseNumber() as int;
+  int i8(SerializationContext ctx) => _parseNumber() as int;
   @override
-  int u8() => _parseNumber() as int;
+  int u8(SerializationContext ctx) => _parseNumber() as int;
 
   @override
-  int i16() => _parseNumber() as int;
+  int i16(SerializationContext ctx) => _parseNumber() as int;
   @override
-  int u16() => _parseNumber() as int;
+  int u16(SerializationContext ctx) => _parseNumber() as int;
 
   @override
-  int i32() => _parseNumber() as int;
+  int i32(SerializationContext ctx) => _parseNumber() as int;
   @override
-  int u32() => _parseNumber() as int;
+  int u32(SerializationContext ctx) => _parseNumber() as int;
 
   @override
-  int i64() => _parseNumber() as int;
+  int i64(SerializationContext ctx) => _parseNumber() as int;
   @override
-  int u64() => _parseNumber() as int;
+  int u64(SerializationContext ctx) => _parseNumber() as int;
 
   @override
-  double f32() => _parseNumber() as double;
+  double f32(SerializationContext ctx) => _parseNumber() as double;
   @override
-  double f64() => _parseNumber() as double;
+  double f64(SerializationContext ctx) => _parseNumber() as double;
 
   @override
-  bool boolean() => _parseBool();
+  bool boolean(SerializationContext ctx) => _parseBool();
   @override
-  String string() => _parseString();
+  String string(SerializationContext ctx) => _parseString();
   @override
-  Uint8List bytes() => Uint8List.fromList(Endec.u8.listOf().decode(this));
+  Uint8List bytes(SerializationContext ctx) => Uint8List.fromList(Endec.u8.listOf().decode(ctx, this));
   @override
-  E? optional<E>(Endec<E> endec) {
+  E? optional<E>(SerializationContext ctx, Endec<E> endec) {
     _skipWhitespace();
     if (_currentToken == _TokenType.literalNull) {
       if (_input.substring(_pointer, _pointer + 4) != 'null') {
@@ -141,26 +145,26 @@ class JsonStringDeserializer implements Deserializer {
       _advance(4);
       return null;
     } else {
-      return endec.decode(this);
+      return endec.decode(ctx, this);
     }
   }
 
   @override
-  SequenceDeserializer<E> sequence<E>(Endec<E> elementEndec) {
+  SequenceDeserializer<E> sequence<E>(SerializationContext ctx, Endec<E> elementEndec) {
     if (_currentToken != _TokenType.arrayBegin) throw 'Expected array, found: $_currentToken';
 
     _advance();
     _skipWhitespace();
-    return _JsonStringArrayDeserializer(this, elementEndec);
+    return _JsonStringArrayDeserializer(this, ctx, elementEndec);
   }
 
   @override
-  MapDeserializer<V> map<V>(Endec<V> valueEndec) {
+  MapDeserializer<V> map<V>(SerializationContext ctx, Endec<V> valueEndec) {
     if (_currentToken != _TokenType.objectBegin) throw 'Expected object, found: $_currentToken';
 
     _advance();
     _skipWhitespace();
-    return _JsonStringObjectDeserializer(this, valueEndec);
+    return _JsonStringObjectDeserializer(this, ctx, valueEndec);
   }
 
   @override
@@ -184,23 +188,27 @@ class _JsonStringArrayDeserializer<V> implements SequenceDeserializer<V> {
 
   final Iterator<V> _elements;
 
-  _JsonStringArrayDeserializer(JsonStringDeserializer context, Endec<V> elementEndec)
-      : _elements = _generator(context, elementEndec).iterator;
+  _JsonStringArrayDeserializer(JsonStringDeserializer deserializer, SerializationContext ctx, Endec<V> elementEndec)
+      : _elements = _generator(deserializer, ctx, elementEndec).iterator;
 
-  static Iterable<V> _generator<V>(JsonStringDeserializer context, Endec<V> elementEndec) sync* {
-    while (context._currentToken != _TokenType.arrayEnd) {
-      yield elementEndec.decode(context);
+  static Iterable<V> _generator<V>(
+    JsonStringDeserializer deserializer,
+    SerializationContext ctx,
+    Endec<V> elementEndec,
+  ) sync* {
+    while (deserializer._currentToken != _TokenType.arrayEnd) {
+      yield elementEndec.decode(ctx, deserializer);
 
-      context._skipWhitespace();
-      if (!_arrayParts.contains(context._currentToken)) {
-        throw 'Expected "," for next element or "]" to close array, found ${context._currentToken}';
+      deserializer._skipWhitespace();
+      if (!_arrayParts.contains(deserializer._currentToken)) {
+        throw 'Expected "," for next element or "]" to close array, found ${deserializer._currentToken}';
       }
 
-      if (context._currentToken == _TokenType.elementSeparator) context._advance();
-      context._skipWhitespace();
+      if (deserializer._currentToken == _TokenType.elementSeparator) deserializer._advance();
+      deserializer._skipWhitespace();
     }
 
-    context._advance();
+    deserializer._advance();
   }
 
   @override
@@ -215,31 +223,35 @@ class _JsonStringObjectDeserializer<V> implements MapDeserializer<V> {
 
   final Iterator<(String, V)> _elements;
 
-  _JsonStringObjectDeserializer(JsonStringDeserializer context, Endec<V> elementEndec)
-      : _elements = _generator(context, elementEndec).iterator;
+  _JsonStringObjectDeserializer(JsonStringDeserializer deserializer, SerializationContext ctx, Endec<V> elementEndec)
+      : _elements = _generator(deserializer, ctx, elementEndec).iterator;
 
-  static Iterable<(String, V)> _generator<V>(JsonStringDeserializer context, Endec<V> elementEndec) sync* {
-    while (context._currentToken != _TokenType.objectEnd) {
-      final key = context._parseString();
-      context._skipWhitespace();
-      if (context._currentToken != _TokenType.keyValueSeparator) {
-        throw 'Expected ":" to separate key from value, found ${context._currentToken}';
+  static Iterable<(String, V)> _generator<V>(
+    JsonStringDeserializer deserializer,
+    SerializationContext ctx,
+    Endec<V> elementEndec,
+  ) sync* {
+    while (deserializer._currentToken != _TokenType.objectEnd) {
+      final key = deserializer._parseString();
+      deserializer._skipWhitespace();
+      if (deserializer._currentToken != _TokenType.keyValueSeparator) {
+        throw 'Expected ":" to separate key from value, found ${deserializer._currentToken}';
       }
 
-      context._advance();
-      context._skipWhitespace();
-      yield (key, elementEndec.decode(context));
+      deserializer._advance();
+      deserializer._skipWhitespace();
+      yield (key, elementEndec.decode(ctx, deserializer));
 
-      context._skipWhitespace();
-      if (!_objectParts.contains(context._currentToken)) {
-        throw 'Expected "," for next entry or "}" to close object, found ${context._currentToken}';
+      deserializer._skipWhitespace();
+      if (!_objectParts.contains(deserializer._currentToken)) {
+        throw 'Expected "," for next entry or "}" to close object, found ${deserializer._currentToken}';
       }
 
-      if (context._currentToken == _TokenType.elementSeparator) context._advance();
-      context._skipWhitespace();
+      if (deserializer._currentToken == _TokenType.elementSeparator) deserializer._advance();
+      deserializer._skipWhitespace();
     }
 
-    context._advance();
+    deserializer._advance();
   }
 
   @override
@@ -290,13 +302,16 @@ enum _TokenType {
 }
 
 void main(List<String> args) {
-  final result = Endec.i32.listOf().mapOf().mapOf().decode(JsonStringDeserializer(r'''
+  final result = Endec.i32.listOf().mapOf().mapOf().decode(
+        SerializationContext.empty,
+        JsonStringDeserializer(r'''
 {
   "a": {"_": [1]},
   "b": {"_": [2, 3], "-": [3, 2]}, 
   "c": {"_": [4, 5, 6]}
 }
-'''));
+'''),
+      );
   print(result);
 }
 

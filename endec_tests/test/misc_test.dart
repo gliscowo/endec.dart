@@ -29,8 +29,9 @@ void main() {
     };
 
     var serializer = BinarySerializer();
-    jsonEndec.encode(serializer, json);
+    jsonEndec.encode(SerializationContext.empty, serializer, json);
 
-    expect(jsonEndec.decode(BinaryDeserializer(ByteData.view(serializer.result.buffer))), json);
+    expect(jsonEndec.decode(SerializationContext.empty, BinaryDeserializer(ByteData.view(serializer.result.buffer))),
+        json);
   });
 }

@@ -13,11 +13,11 @@ ${indices.map((e) => "    StructField<S, F$e> f$e,").join("\n")}
     S Function($types) constructor,
   ) =>
       StructEndec.of(
-        (struct, value) {
-${indices.map((e) => "          f$e.encodeField(struct, value);").join("\n")}
+        (ctx, serializer, struct, value) {
+${indices.map((e) => "          f$e.encodeField(ctx, serializer, struct, value);").join("\n")}
         },
-        (struct) {
-          return constructor(${indices.map((e) => "f$e.decodeField(struct)").join(", ")},);
+        (ctx, deserializer, struct) {
+          return constructor(${indices.map((e) => "f$e.decodeField(ctx, deserializer, struct)").join(", ")},);
         }
       );
 """);

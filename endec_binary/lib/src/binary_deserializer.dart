@@ -3,7 +3,8 @@ import 'dart:typed_data';
 
 import 'package:endec/endec.dart';
 
-T fromBinary<T>(Endec<T> endec, Uint8List encoded) => endec.decode(BinaryDeserializer(ByteData.view(encoded.buffer)));
+T fromBinary<T>(Endec<T> endec, Uint8List encoded, {SerializationContext ctx = SerializationContext.empty}) =>
+    endec.decode(ctx, BinaryDeserializer(ByteData.view(encoded.buffer)));
 
 class BinaryDeserializer implements Deserializer {
   final ByteData _buffer;
@@ -12,29 +13,29 @@ class BinaryDeserializer implements Deserializer {
   BinaryDeserializer(this._buffer);
 
   @override
-  int i8() => _read((idx, _) => _buffer.getInt8(idx), 1);
+  int i8(SerializationContext ctx) => _read((idx, _) => _buffer.getInt8(idx), 1);
   @override
-  int u8() => _read((idx, _) => _buffer.getUint8(idx), 1);
+  int u8(SerializationContext ctx) => _read((idx, _) => _buffer.getUint8(idx), 1);
 
   @override
-  int i16() => _read(_buffer.getInt16, 2);
+  int i16(SerializationContext ctx) => _read(_buffer.getInt16, 2);
   @override
-  int u16() => _read(_buffer.getUint16, 2);
+  int u16(SerializationContext ctx) => _read(_buffer.getUint16, 2);
 
   @override
-  int i32() => _read(_buffer.getInt32, 4);
+  int i32(SerializationContext ctx) => _read(_buffer.getInt32, 4);
   @override
-  int u32() => _read(_buffer.getUint32, 4);
+  int u32(SerializationContext ctx) => _read(_buffer.getUint32, 4);
 
   @override
-  int i64() => _read(_buffer.getInt64, 8);
+  int i64(SerializationContext ctx) => _read(_buffer.getInt64, 8);
   @override
-  int u64() => _read(_buffer.getUint64, 8);
+  int u64(SerializationContext ctx) => _read(_buffer.getUint64, 8);
 
   @override
-  double f32() => _read(_buffer.getFloat32, 4);
+  double f32(SerializationContext ctx) => _read(_buffer.getFloat32, 4);
   @override
-  double f64() => _read(_buffer.getFloat64, 8);
+  double f64(SerializationContext ctx) => _read(_buffer.getFloat64, 8);
 
   T _read<T>(T Function(int idx, Endian) reader, int size) {
     final value = reader(_cursor, Endian.little);
@@ -44,16 +45,16 @@ class BinaryDeserializer implements Deserializer {
   }
 
   @override
-  bool boolean() => u8() != 0;
+  bool boolean(SerializationContext ctx) => u8(ctx) != 0;
   @override
-  String string() => utf8.decode(_readBytes());
+  String string(SerializationContext ctx) => utf8.decode(_readBytes(ctx));
   @override
-  Uint8List bytes() => _readBytes();
+  Uint8List bytes(SerializationContext ctx) => _readBytes(ctx);
   @override
-  E? optional<E>(Endec<E> endec) => boolean() ? endec.decode(this) : null;
+  E? optional<E>(SerializationContext ctx, Endec<E> endec) => boolean(ctx) ? endec.decode(ctx, this) : null;
 
-  Uint8List _readBytes() {
-    final length = i32();
+  Uint8List _readBytes(SerializationContext ctx) {
+    final length = i32(ctx);
 
     final list = Uint8List.view(_buffer.buffer, _cursor, length);
     _cursor += length;
@@ -62,10 +63,12 @@ class BinaryDeserializer implements Deserializer {
   }
 
   @override
-  SequenceDeserializer<E> sequence<E>(Endec<E> elementEndec) => _BinarySequenceDeserializer(this, elementEndec);
+  SequenceDeserializer<E> sequence<E>(SerializationContext ctx, Endec<E> elementEndec) =>
+      _BinarySequenceDeserializer(this, ctx, elementEndec);
 
   @override
-  MapDeserializer<V> map<V>(Endec<V> valueEndec) => _BinaryMapDeserializer(this, valueEndec);
+  MapDeserializer<V> map<V>(SerializationContext ctx, Endec<V> valueEndec) =>
+      _BinaryMapDeserializer(this, ctx, valueEndec);
 
   @override
   StructDeserializer struct() => _BinaryStructDeserializer(this);
@@ -84,43 +87,46 @@ class BinaryDeserializer implements Deserializer {
 }
 
 class _BinarySequenceDeserializer<V> implements SequenceDeserializer<V> {
-  final BinaryDeserializer _context;
+  final BinaryDeserializer _deserializer;
+  final SerializationContext _ctx;
   final Endec<V> _elementEndec;
 
   final int _length;
   int _read = 0;
 
-  _BinarySequenceDeserializer(this._context, this._elementEndec) : _length = _context.i32();
+  _BinarySequenceDeserializer(this._deserializer, this._ctx, this._elementEndec) : _length = _deserializer.i32(_ctx);
 
   @override
   bool moveNext() => ++_read <= _length;
 
   @override
-  V element() => _elementEndec.decode(_context);
+  V element() => _elementEndec.decode(_ctx, _deserializer);
 }
 
 class _BinaryMapDeserializer<V> implements MapDeserializer<V> {
-  final BinaryDeserializer _context;
+  final BinaryDeserializer _deserializer;
+  final SerializationContext _ctx;
   final Endec<V> _valueEndec;
 
   final int _length;
   int _read = 0;
 
-  _BinaryMapDeserializer(this._context, this._valueEndec) : _length = _context.i32();
+  _BinaryMapDeserializer(this._deserializer, this._ctx, this._valueEndec) : _length = _deserializer.i32(_ctx);
 
   @override
   bool moveNext() => ++_read <= _length;
 
   @override
-  (String, V) entry() => (_context.string(), _valueEndec.decode(_context));
+  (String, V) entry() => (_deserializer.string(_ctx), _valueEndec.decode(_ctx, _deserializer));
 }
 
 class _BinaryStructDeserializer implements StructDeserializer {
-  final BinaryDeserializer _context;
-  _BinaryStructDeserializer(this._context);
+  final BinaryDeserializer _deserializer;
+  _BinaryStructDeserializer(this._deserializer);
 
   @override
-  F field<F>(String name, Endec<F> endec) => endec.decode(_context);
+  F field<F>(String name, SerializationContext ctx, Endec<F> endec) => endec.decode(ctx, _deserializer);
   @override
-  F optionalField<F>(String name, Endec<F> endec, F Function() defaultValueFactory) => field(name, endec);
+  F optionalField<F>(String name, SerializationContext ctx, Endec<F> endec, F Function() defaultValueFactory) =>
+      field(name, ctx, endec);
 }
