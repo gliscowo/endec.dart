@@ -30,7 +30,7 @@ abstract interface class Deserializer {
   MapDeserializer<V> map<V>(SerializationContext ctx, Endec<V> valueEndec);
   StructDeserializer struct();
 
-  tryRead<V>(V Function(Deserializer deserializer) reader);
+  V tryRead<V>(V Function(Deserializer deserializer) reader);
 }
 
 abstract interface class SelfDescribingDeserializer extends Deserializer {

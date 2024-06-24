@@ -28,7 +28,7 @@ abstract class RecursiveDeserializer<T> implements Deserializer {
   }
 
   @override
-  tryRead<V>(V Function(Deserializer deserializer) reader) {
+  V tryRead<V>(V Function(Deserializer deserializer) reader) {
     final framesBackup = Queue.of(_frames);
 
     try {

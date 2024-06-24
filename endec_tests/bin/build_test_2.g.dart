@@ -10,12 +10,7 @@ part of 'build_test_2.dart';
 final _$YepThatHasStuffInItEndec = Endec<YepThatHasStuffInIt>.recursive(
   (thisRef) => structEndec<YepThatHasStuffInIt>().with2Fields(
     Class2.endec.fieldOf('ValueTime', (struct) => struct.valueTime),
-    thisRef
-        .mapOf()
-        .listOf()
-        .optionalOf()
-        .fieldOf('Recursive', (struct) => struct.recursive),
-    (valueTime, recursive) =>
-        YepThatHasStuffInIt(valueTime, recursive: recursive),
+    thisRef.mapOf().listOf().optionalOf().fieldOf('Recursive', (struct) => struct.recursive),
+    (valueTime, recursive) => YepThatHasStuffInIt(valueTime, recursive: recursive),
   ),
 );

@@ -1,13 +1,13 @@
-// -- attributes --
-
-sealed class AttributeInstance {
-  SerializationAttribute get attribute;
-  Object? get value;
-}
+// --- attributes ---
 
 sealed class SerializationAttribute {
   final String name;
   const SerializationAttribute(this.name);
+}
+
+sealed class AttributeInstance {
+  SerializationAttribute get attribute;
+  Object? get value;
 }
 
 final class MarkerAttribute extends SerializationAttribute implements AttributeInstance {
@@ -35,7 +35,7 @@ final class _ValueAttributeInstance<T> implements AttributeInstance {
   _ValueAttributeInstance(this.attribute, this.value);
 }
 
-// -- context --
+// --- context ---
 
 class SerializationContext {
   static const empty = SerializationContext._({}, {});

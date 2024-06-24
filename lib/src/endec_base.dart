@@ -2,9 +2,8 @@ import 'dart:core' as core show bool;
 import 'dart:core' hide bool;
 import 'dart:typed_data';
 
-import 'package:endec/src/serialization_context.dart';
-
 import 'deserializer.dart';
+import 'serialization_context.dart';
 import 'serializer.dart';
 import 'struct_endec.dart';
 
@@ -12,6 +11,7 @@ typedef Encoder<T> = void Function(SerializationContext ctx, Serializer serializ
 typedef Decoder<T> = T Function(SerializationContext ctx, Deserializer deserializer);
 
 abstract mixin class Endec<T> {
+  // --- serializer primitives ---
   static final Endec<int> i8 =
       Endec.of((ctx, serializer, value) => serializer.i8(ctx, value), (ctx, deserializer) => deserializer.i8(ctx));
   static final Endec<int> u8 =
@@ -33,6 +33,7 @@ abstract mixin class Endec<T> {
       Endec.of((ctx, serializer, value) => serializer.f32(ctx, value), (ctx, deserializer) => deserializer.f32(ctx));
   static final Endec<double> f64 =
       Endec.of((ctx, serializer, value) => serializer.f64(ctx, value), (ctx, deserializer) => deserializer.f64(ctx));
+
   static final Endec<core.bool> bool = Endec.of(
       (ctx, serializer, value) => serializer.boolean(ctx, value), (ctx, deserializer) => deserializer.boolean(ctx));
   static final Endec<String> string = Endec.of(
@@ -40,8 +41,10 @@ abstract mixin class Endec<T> {
   static final Endec<Uint8List> bytes = Endec.of(
       (ctx, serializer, value) => serializer.bytes(ctx, value), (ctx, deserializer) => deserializer.bytes(ctx));
 
-  factory Endec.of(Encoder<T> encoder, Decoder<T> decoder) => _SimpleEndec(encoder, decoder);
-  factory Endec.recursive(Endec<T> Function(Endec<T> thisRef) factory) => _RecursiveEndec(factory);
+  // --- constructors ---
+
+  factory Endec.of(Encoder<T> encoder, Decoder<T> decoder) = _SimpleEndec.new;
+  factory Endec.recursive(Endec<T> Function(Endec<T> thisRef) factory) = _RecursiveEndec.new;
 
   static Endec<Map<K, V>> map<K, V>(Endec<K> keyEndec, Endec<V> valueEndec) => structEndec<MapEntry<K, V>>()
       .with2Fields(
@@ -52,8 +55,12 @@ abstract mixin class Endec<T> {
       .listOf()
       .xmap(Map.fromEntries, (map) => map.entries.toList());
 
+  // --- interface specification ---
+
   void encode(SerializationContext ctx, Serializer serializer, T value);
   T decode(SerializationContext ctx, Deserializer deserializer);
+
+  // --- composition operators ---
 
   Endec<List<T>> listOf() => _ListEndec(this);
   Endec<Set<T>> setOf() => listOf().xmap((self) => self.toSet(), (other) => other.toList());

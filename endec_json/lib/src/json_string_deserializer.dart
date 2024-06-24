@@ -171,7 +171,7 @@ class JsonStringDeserializer implements Deserializer {
   StructDeserializer struct() => throw UnimplementedError();
 
   @override
-  tryRead<V>(V Function(Deserializer deserializer) reader) {
+  V tryRead<V>(V Function(Deserializer deserializer) reader) {
     final prevPointer = _pointer;
 
     try {
