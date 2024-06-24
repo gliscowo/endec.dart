@@ -119,7 +119,7 @@ structEndec<${element.name}>().with${fields.length}Field${fields.length > 1 ? 's
 
     if (fields.any((element) => element.endec.contains('thisRef'))) {
       result
-        ..write('final $endecName = Endec<${element.name}>.recursive((thisRef) => ')
+        ..write('final $endecName = StructEndec<${element.name}>.recursive((thisRef) => ')
         ..write(endec)
         ..write(',);');
     } else {

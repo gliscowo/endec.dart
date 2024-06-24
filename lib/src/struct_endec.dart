@@ -1,8 +1,9 @@
-import 'package:endec/endec.dart';
-
+import 'deserializer.dart';
+import 'endec_base.dart';
 import 'serialization_context.dart';
+import 'serializer.dart';
 
-extension Field<F> on Endec<F> {
+extension EndecToStructField<F> on Endec<F> {
   StructField<S, F> fieldOf<S>(String name, F Function(S struct) getter, {F Function()? defaultValueFactory}) =>
       defaultValueFactory != null
           ? StructField.optional(name, this, getter, defaultValueFactory)
@@ -15,7 +16,8 @@ typedef StructDecoder<S> = S Function(SerializationContext ctx, Deserializer des
 
 abstract class StructEndec<S> with Endec<S> {
   StructEndec();
-  factory StructEndec.of(StructEncoder<S> encoder, StructDecoder<S> decoder) => _SimpleStructEndec(encoder, decoder);
+  factory StructEndec.of(StructEncoder<S> encoder, StructDecoder<S> decoder) = _SimpleStructEndec.new;
+  factory StructEndec.recursive(StructEndec<S> Function(StructEndec<S> thisRef) factory) = _RecursiveStructEndec.new;
 
   void encodeStruct(SerializationContext ctx, Serializer serializer, StructSerializer struct, S value);
   S decodeStruct(SerializationContext ctx, Deserializer deserializer, StructDeserializer struct);
@@ -66,6 +68,21 @@ class _XmapStructEndec<T, U> extends StructEndec<U> {
   @override
   U decodeStruct(SerializationContext ctx, Deserializer deserializer, StructDeserializer struct) =>
       _to(_sourceEndec.decodeStruct(ctx, deserializer, struct));
+}
+
+class _RecursiveStructEndec<T> extends StructEndec<T> {
+  late final StructEndec<T> _inner;
+  _RecursiveStructEndec(StructEndec<T> Function(StructEndec<T>) endecFactory) {
+    _inner = endecFactory(this);
+  }
+
+  @override
+  void encodeStruct(SerializationContext ctx, Serializer serializer, StructSerializer struct, T value) =>
+      _inner.encodeStruct(ctx, serializer, struct, value);
+
+  @override
+  T decodeStruct(SerializationContext ctx, Deserializer deserializer, StructDeserializer struct) =>
+      _inner.decodeStruct(ctx, deserializer, struct);
 }
 
 abstract final class StructField<S, F> {
