@@ -55,6 +55,9 @@ abstract mixin class Endec<T> {
       .listOf()
       .xmap(Map.fromEntries, (map) => map.entries.toList());
 
+  static AttributeBranchBuilder<T> ifAttr<T>(SerializationAttribute attribute, Endec<T> endec) =>
+      AttributeBranchBuilder(attribute, endec);
+
   // --- interface specification ---
 
   void encode(SerializationContext ctx, Serializer serializer, T value);

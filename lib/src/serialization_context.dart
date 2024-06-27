@@ -1,5 +1,10 @@
 // --- attributes ---
 
+import 'package:endec/src/deserializer.dart';
+import 'package:endec/src/serializer.dart';
+
+import 'endec_base.dart';
+
 sealed class SerializationAttribute {
   final String name;
   const SerializationAttribute(this.name);
@@ -93,11 +98,52 @@ class SerializationContext {
   bool hasAttribute(SerializationAttribute attribute) => _attributeValues.containsKey(attribute);
 
   /// Get the value that a [ValueAttribute] has on this context. Throws
-  ///  [ArgumentError] if [attribute] is not present on this context.
+  /// [ArgumentError] if [attribute] is not present on this context.
   A getAttributeValue<A>(ValueAttribute<A> attribute) => hasAttribute(attribute)
       ? _attributeValues[attribute] as A
       : throw ArgumentError.value(attribute, "attribute", "Attribute $attribute is not present in this context");
 
   static Map<SerializationAttribute, Object?> _unpackAttributes(List<AttributeInstance> attributes) =>
       Map.fromEntries(attributes.map((e) => MapEntry(e.attribute, e.value)));
+}
+
+// --- attribute branching ---
+
+typedef _Branch<T> = (SerializationAttribute, Endec<T>);
+
+class AttributeBranchBuilder<T> {
+  final List<_Branch<T>> _branches;
+  AttributeBranchBuilder._(this._branches);
+  AttributeBranchBuilder(SerializationAttribute attribute, Endec<T> endec) : _branches = [(attribute, endec)];
+
+  AttributeBranchBuilder<T> elseIf(SerializationAttribute attribute, Endec<T> branchEndec) =>
+      AttributeBranchBuilder._([..._branches, (attribute, branchEndec)]);
+
+  Endec<T> orElse(Endec<T> endec) => _AttributeBranchingEndec(_branches, endec);
+}
+
+class _AttributeBranchingEndec<T> with Endec<T> {
+  final List<_Branch<T>> _branches;
+  final Endec<T> _default;
+  _AttributeBranchingEndec(this._branches, this._default);
+
+  @override
+  T decode(SerializationContext ctx, Deserializer deserializer) {
+    for (final (attr, endec) in _branches) {
+      if (!ctx.hasAttribute(attr)) continue;
+      return endec.decode(ctx, deserializer);
+    }
+
+    return _default.decode(ctx, deserializer);
+  }
+
+  @override
+  void encode(SerializationContext ctx, Serializer serializer, T value) {
+    for (final (attr, endec) in _branches) {
+      if (!ctx.hasAttribute(attr)) continue;
+      return endec.encode(ctx, serializer, value);
+    }
+
+    return _default.encode(ctx, serializer, value);
+  }
 }

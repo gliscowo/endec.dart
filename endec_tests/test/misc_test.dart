@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:endec/endec.dart';
 import 'package:endec_binary/endec_binary.dart';
+import 'package:endec_edm/endec_edm.dart';
 import 'package:endec_json/endec_json.dart';
 import 'package:test/test.dart';
 
@@ -52,5 +53,17 @@ void main() {
       () => fromJson(Endec.f32.ranged(min: -2, max: -.25, error: true), 0.0),
       throwsA(isA<RangedNumException>()),
     );
+  });
+
+  test('attribute branching', () {
+    final attr1 = MarkerAttribute('attr1');
+    final attr2 = MarkerAttribute('attr2');
+    final endec = Endec.ifAttr(attr1, Endec.u8).elseIf(attr2, Endec.u32).orElse(Endec.i64);
+
+    expect(toEdm(endec, 16, ctx: SerializationContext(attributes: [attr1])).type, EdmElementType.u8);
+    expect(toEdm(endec, 16, ctx: SerializationContext(attributes: [attr1, attr2])).type, EdmElementType.u8);
+    expect(toEdm(endec, 16, ctx: SerializationContext(attributes: [attr2, attr1])).type, EdmElementType.u8);
+    expect(toEdm(endec, 16, ctx: SerializationContext(attributes: [attr2])).type, EdmElementType.u32);
+    expect(toEdm(endec, 16).type, EdmElementType.i64);
   });
 }
