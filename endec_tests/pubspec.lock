@@ -179,35 +179,35 @@ packages:
       path: "../endec_binary"
       relative: true
     source: path
-    version: "1.0.0"
+    version: "0.1.0"
   endec_builder:
     dependency: "direct dev"
     description:
       path: "../endec_builder"
       relative: true
     source: path
-    version: "1.0.0"
+    version: "0.1.0"
   endec_edm:
     dependency: "direct main"
     description:
       path: "../endec_edm"
       relative: true
     source: path
-    version: "1.0.0"
+    version: "0.1.0"
   endec_json:
     dependency: "direct main"
     description:
       path: "../endec_json"
       relative: true
     source: path
-    version: "1.0.0"
+    version: "0.1.0"
   endec_nbt:
     dependency: "direct main"
     description:
       path: "../endec_nbt"
       relative: true
     source: path
-    version: "1.0.0"
+    version: "0.1.0"
   file:
     dependency: transitive
     description:

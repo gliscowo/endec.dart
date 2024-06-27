@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'dart:typed_data';
 
+import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
 enum EdmElementType {
@@ -65,9 +66,16 @@ final class EdmElement<T> {
   static EdmElement<EdmElement<T>?> optional<T>(EdmElement<T>? value) => EdmOptional._(value);
 
   @factory
-  static EdmElement<List<EdmElement>> sequence(List<EdmElement> value) => EdmSequence._(value);
+  static EdmElement<List<EdmElement>> sequence(List<EdmElement> value) => EdmSequence._(List.unmodifiable(value));
   @factory
-  static EdmElement<Map<String, EdmElement>> map(Map<String, EdmElement> value) => EdmMap._(value);
+  static EdmElement<List<EdmElement>> wrapSequence(List<EdmElement> value) => EdmSequence._(value);
+
+  @factory
+  static EdmElement<Map<String, EdmElement>> map(Map<String, EdmElement> value) => EdmMap._(Map.unmodifiable(value));
+  @factory
+  static EdmElement<Map<String, EdmElement>> wrapMap(Map<String, EdmElement> value) => EdmMap._(value);
+
+  V cast<V>() => this.value as V;
 
   Object? unwrap() => switch (type) {
         EdmElementType.sequence => (value as List<EdmElement>).map((e) => e.unwrap()).toList(),
@@ -75,6 +83,11 @@ final class EdmElement<T> {
         EdmElementType.optional => (value as EdmElement?)?.unwrap(),
         _ => value
       };
+
+  @override
+  bool operator ==(Object other) => other is EdmElement && type == other.type && value == other.value;
+  @override
+  int get hashCode => Object.hash(type, value);
 
   @override
   String toString() {
@@ -87,7 +100,12 @@ final class EdmElement<T> {
 }
 
 final class EdmMap extends EdmElement<Map<String, EdmElement>> {
-  EdmMap._(Map<String, EdmElement> value) : super._(Map.unmodifiable(value), EdmElementType.map);
+  EdmMap._(Map<String, EdmElement> value) : super._(value, EdmElementType.map);
+
+  @override
+  bool operator ==(Object other) => other is EdmElement && const MapEquality().equals(value, other.value);
+  @override
+  int get hashCode => Object.hash(type, const MapEquality().hash(value));
 
   @override
   void _format(_EdmFormatter formatter) {
@@ -105,7 +123,12 @@ final class EdmMap extends EdmElement<Map<String, EdmElement>> {
 }
 
 final class EdmSequence extends EdmElement<List<EdmElement>> {
-  EdmSequence._(List<EdmElement> value) : super._(List.unmodifiable(value), EdmElementType.sequence);
+  EdmSequence._(List<EdmElement> value) : super._(value, EdmElementType.sequence);
+
+  @override
+  bool operator ==(Object other) => other is EdmElement && const ListEquality().equals(value, other.value);
+  @override
+  int get hashCode => Object.hash(type, const ListEquality().hash(value));
 
   @override
   void _format(_EdmFormatter formatter) {
