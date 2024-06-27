@@ -1,5 +1,6 @@
 library;
 
+export 'src/block_writer.dart';
 export 'src/deserializer.dart';
 export 'src/endec_base.dart';
 export 'src/recursive_deserializer.dart';

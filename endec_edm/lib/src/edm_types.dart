@@ -2,6 +2,7 @@ import 'dart:collection';
 import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
+import 'package:endec/endec.dart';
 import 'package:meta/meta.dart';
 
 enum EdmElementType {
@@ -91,12 +92,12 @@ final class EdmElement<T> {
 
   @override
   String toString() {
-    final formatter = _EdmFormatter();
+    final formatter = BlockWriter();
     _format(formatter);
-    return formatter.toString();
+    return formatter.buildResult();
   }
 
-  void _format(_EdmFormatter formatter) => formatter.write("${type.name}($value)");
+  void _format(BlockWriter formatter) => formatter.write("${type.name}($value)");
 }
 
 final class EdmMap extends EdmElement<Map<String, EdmElement>> {
@@ -108,7 +109,7 @@ final class EdmMap extends EdmElement<Map<String, EdmElement>> {
   int get hashCode => Object.hash(type, const MapEquality().hash(value));
 
   @override
-  void _format(_EdmFormatter formatter) {
+  void _format(BlockWriter formatter) {
     formatter.startBlock('map({', '})');
 
     for (final (idx, MapEntry(:key, :value)) in value.entries.indexed) {
@@ -131,7 +132,7 @@ final class EdmSequence extends EdmElement<List<EdmElement>> {
   int get hashCode => Object.hash(type, const ListEquality().hash(value));
 
   @override
-  void _format(_EdmFormatter formatter) {
+  void _format(BlockWriter formatter) {
     formatter.startBlock('sequence([', '])');
 
     for (final (idx, value) in value.indexed) {
@@ -147,7 +148,7 @@ final class EdmOptional<T> extends EdmElement<EdmElement<T>?> {
   EdmOptional._(EdmElement<T>? value) : super._(value, EdmElementType.optional);
 
   @override
-  void _format(_EdmFormatter formatter) {
+  void _format(BlockWriter formatter) {
     formatter.write("optional(");
     if (value != null) {
       value!._format(formatter);
@@ -156,37 +157,4 @@ final class EdmOptional<T> extends EdmElement<EdmElement<T>?> {
     }
     formatter.write(")");
   }
-}
-
-// TODO this is dangerously similar to SnbtWriter
-class _EdmFormatter {
-  final StringBuffer _result = StringBuffer();
-  final Queue<String> _blocks = Queue();
-  int indentLevel = 0;
-
-  _EdmFormatter();
-
-  String escape(String input) {
-    return input.replaceAll('"', r'\"');
-  }
-
-  void write(String value) => _result.write(value);
-  void writeln([String value = ""]) => _result.write("$value\n${"  " * indentLevel}");
-
-  void startBlock(String startDelimiter, String endDelimiter) {
-    indentLevel++;
-    _blocks.addLast(endDelimiter);
-
-    writeln(startDelimiter);
-  }
-
-  void endBlock() {
-    indentLevel--;
-
-    writeln();
-    write(_blocks.removeLast());
-  }
-
-  @override
-  String toString() => _result.toString();
 }

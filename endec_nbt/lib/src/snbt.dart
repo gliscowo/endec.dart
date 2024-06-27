@@ -2,6 +2,8 @@ import 'dart:collection';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:endec/endec.dart';
+
 import 'nbt_types.dart';
 
 NbtElement snbtToNbt(String snbt) => _SnbtReader(snbt).parseElement();
@@ -11,10 +13,12 @@ extension ToSnbt on NbtElement {
 }
 
 String nbtToSnbt(NbtElement element) {
-  void stringify(SnbtWriter writer, NbtElement element) {
+  String escape(String string) => string.replaceAll('"', r'\"');
+
+  void stringify(BlockWriter writer, NbtElement element) {
     switch (element) {
       case NbtString(:var value):
-        writer.write('"${writer.escape(value)}"');
+        writer.write('"${escape(value)}"');
       case NbtByte(:var value):
         writer.write("${value}b");
       case NbtShort(:var value):
@@ -44,7 +48,7 @@ String nbtToSnbt(NbtElement element) {
         writer.startBlock('{', '}');
 
         for (final (idx, MapEntry(:key, :value)) in compound.entries.indexed) {
-          writer.write(NbtCompound.safeKeyRegex.hasMatch(key) ? "$key: " : '"${writer.escape(key)}": ');
+          writer.write(NbtCompound.safeKeyRegex.hasMatch(key) ? "$key: " : '"${escape(key)}": ');
           stringify(writer, value);
 
           if (idx < compound.length - 1) writer.writeln(",");
@@ -54,41 +58,9 @@ String nbtToSnbt(NbtElement element) {
     }
   }
 
-  final writer = SnbtWriter._();
+  final writer = BlockWriter();
   stringify(writer, element);
-  return writer.toString();
-}
-
-class SnbtWriter {
-  final StringBuffer _result = StringBuffer();
-  final Queue<String> _blocks = Queue();
-  int indentLevel = 0;
-
-  SnbtWriter._();
-
-  String escape(String input) {
-    return input.replaceAll('"', r'\"');
-  }
-
-  void write(String value) => _result.write(value);
-  void writeln([String value = ""]) => _result.write("$value\n${"  " * indentLevel}");
-
-  void startBlock(String startDelimiter, String endDelimiter) {
-    indentLevel++;
-    _blocks.addLast(endDelimiter);
-
-    writeln(startDelimiter);
-  }
-
-  void endBlock() {
-    indentLevel--;
-
-    writeln();
-    write(_blocks.removeLast());
-  }
-
-  @override
-  String toString() => _result.toString();
+  return writer.buildResult();
 }
 
 class _SnbtReader {

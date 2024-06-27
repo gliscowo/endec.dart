@@ -1,7 +1,6 @@
 @experimental
 library json_string_serializer;
 
-import 'dart:collection';
 import 'dart:typed_data';
 
 import 'package:endec/endec.dart';
@@ -10,15 +9,17 @@ import 'package:meta/meta.dart';
 String toJson<T, S extends T>(Endec<T> endec, S value, {SerializationContext ctx = SerializationContext.empty}) {
   final serializer = JsonStringSerializer();
   endec.encode(ctx, serializer, value);
-  return serializer._writer.toString();
+  return serializer._writer.buildResult();
 }
 
 class JsonStringSerializer implements Serializer {
   @override
   final bool selfDescribing = false;
-  final _JsonWriter _writer = _JsonWriter();
+  final BlockWriter _writer = BlockWriter();
 
   JsonStringSerializer();
+
+  String _escapedString(String content) => '"${content.replaceAll('"', r'\"')}"';
 
   @override
   void i8(SerializationContext ctx, int value) => _writer.write(value.toString());
@@ -48,7 +49,7 @@ class JsonStringSerializer implements Serializer {
   @override
   void boolean(SerializationContext ctx, bool value) => _writer.write(value.toString());
   @override
-  void string(SerializationContext ctx, String value) => _writer.write('"$value"');
+  void string(SerializationContext ctx, String value) => _writer.write(_escapedString(value));
   @override
   void bytes(SerializationContext ctx, Uint8List bytes) =>
       _writer.write('[${bytes.map((e) => e.toString()).join(', ')}]');
@@ -95,7 +96,7 @@ class _JsonStringMapSerializer<V> implements MapSerializer<V>, StructSerializer 
   void entry(String key, V value) {
     if (_hadElement) _serializer._writer.write(', ');
 
-    _serializer._writer.write('"$key": ');
+    _serializer._writer.write('${_serializer._escapedString(key)}: ');
     _valueEndec!.encode(_ctx!, _serializer, value);
     _hadElement = true;
   }
@@ -103,7 +104,7 @@ class _JsonStringMapSerializer<V> implements MapSerializer<V>, StructSerializer 
   @override
   void field<F, _V extends F>(String key, SerializationContext ctx, Endec<F> endec, _V value, {bool optional = false}) {
     if (_hadElement) _serializer._writer.writeln(', ');
-    _serializer._writer.write('"$key": ');
+    _serializer._writer.write('${_serializer._escapedString(key)}: ');
     endec.encode(ctx, _serializer, value);
     _hadElement = true;
   }
@@ -130,36 +131,6 @@ class _JsonStringSequenceSerializer<V> implements SequenceSerializer<V> {
 
   @override
   void end() => _serializer._writer.endBlock();
-}
-
-class _JsonWriter {
-  final StringBuffer _result = StringBuffer();
-  final Queue<String> _blocks = Queue();
-  int indentLevel = 0;
-
-  String escape(String input) {
-    return input.replaceAll('"', r'\"');
-  }
-
-  void write(String value) => _result.write(value);
-  void writeln([String value = ""]) => _result.write("$value\n${"  " * indentLevel}");
-
-  void startBlock(String startDelimiter, String endDelimiter) {
-    indentLevel++;
-    _blocks.addLast(endDelimiter);
-
-    writeln(startDelimiter);
-  }
-
-  void endBlock() {
-    indentLevel--;
-
-    writeln();
-    write(_blocks.removeLast());
-  }
-
-  @override
-  String toString() => _result.toString();
 }
 
 class JsonEncodeError extends Error {

@@ -189,9 +189,9 @@ class _JsonStringArrayDeserializer<V> implements SequenceDeserializer<V> {
   final Iterator<V> _elements;
 
   _JsonStringArrayDeserializer(JsonStringDeserializer deserializer, SerializationContext ctx, Endec<V> elementEndec)
-      : _elements = _generator(deserializer, ctx, elementEndec).iterator;
+      : _elements = _parser(deserializer, ctx, elementEndec).iterator;
 
-  static Iterable<V> _generator<V>(
+  static Iterable<V> _parser<V>(
     JsonStringDeserializer deserializer,
     SerializationContext ctx,
     Endec<V> elementEndec,
@@ -224,9 +224,9 @@ class _JsonStringObjectDeserializer<V> implements MapDeserializer<V> {
   final Iterator<(String, V)> _elements;
 
   _JsonStringObjectDeserializer(JsonStringDeserializer deserializer, SerializationContext ctx, Endec<V> elementEndec)
-      : _elements = _generator(deserializer, ctx, elementEndec).iterator;
+      : _elements = _parser(deserializer, ctx, elementEndec).iterator;
 
-  static Iterable<(String, V)> _generator<V>(
+  static Iterable<(String, V)> _parser<V>(
     JsonStringDeserializer deserializer,
     SerializationContext ctx,
     Endec<V> elementEndec,
