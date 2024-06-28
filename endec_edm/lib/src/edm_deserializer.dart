@@ -10,42 +10,42 @@ class EdmDeserializer extends RecursiveDeserializer<EdmElement> {
   EdmDeserializer(super.serialized);
 
   @override
-  int i8(SerializationContext ctx) => currentValue().cast<int>();
+  int i8(SerializationContext ctx) => currentValue().cast();
   @override
-  int u8(SerializationContext ctx) => currentValue().cast<int>();
+  int u8(SerializationContext ctx) => currentValue().cast();
 
   @override
-  int i16(SerializationContext ctx) => currentValue().cast<int>();
+  int i16(SerializationContext ctx) => currentValue().cast();
   @override
-  int u16(SerializationContext ctx) => currentValue().cast<int>();
+  int u16(SerializationContext ctx) => currentValue().cast();
 
   @override
-  int i32(SerializationContext ctx) => currentValue().cast<int>();
+  int i32(SerializationContext ctx) => currentValue().cast();
   @override
-  int u32(SerializationContext ctx) => currentValue().cast<int>();
+  int u32(SerializationContext ctx) => currentValue().cast();
 
   @override
-  int i64(SerializationContext ctx) => currentValue().cast<int>();
+  int i64(SerializationContext ctx) => currentValue().cast();
   @override
-  int u64(SerializationContext ctx) => currentValue().cast<int>();
+  int u64(SerializationContext ctx) => currentValue().cast();
 
   @override
-  double f32(SerializationContext ctx) => currentValue().cast<double>();
+  double f32(SerializationContext ctx) => currentValue().cast();
   @override
-  double f64(SerializationContext ctx) => currentValue().cast<double>();
+  double f64(SerializationContext ctx) => currentValue().cast();
 
   @override
-  bool boolean(SerializationContext ctx) => currentValue().cast<bool>();
+  bool boolean(SerializationContext ctx) => currentValue().cast();
   @override
-  String string(SerializationContext ctx) => currentValue().cast<String>();
+  String string(SerializationContext ctx) => currentValue().cast();
   @override
-  Uint8List bytes(SerializationContext ctx) => currentValue().cast<Uint8List>();
+  Uint8List bytes(SerializationContext ctx) => currentValue().cast();
 
   @override
   E? optional<E>(SerializationContext ctx, Endec<E> endec) {
     final element = currentValue();
     if (element.value != null) {
-      return frame(() => element.value, () => endec.decode(ctx, this), false);
+      return frame(() => element.value, () => endec.decode(ctx, this));
     }
 
     return null;
@@ -80,7 +80,6 @@ class _EdmSequenceDeserializer<V> implements SequenceDeserializer<V> {
   V element() => _deserializer.frame(
         () => _elements.current,
         () => _elementEndec.decode(_ctx, _deserializer),
-        false,
       );
 }
 
@@ -107,32 +106,19 @@ class _EdmMapDeserializer<V> implements MapDeserializer<V>, StructDeserializer {
   (String, V) entry() => _deserializer.frame(
         () => _entries!.current.value,
         () => (_entries!.current.key, _valueEndec!.decode(_ctx!, _deserializer)),
-        false,
       );
 
   @override
-  F field<F>(String name, SerializationContext ctx, Endec<F> endec) {
-    if (!_map.containsKey(name)) {
+  F field<F>(String name, SerializationContext ctx, Endec<F> endec, {F Function()? defaultValueFactory}) {
+    final value = _map[name];
+    if (value == null) {
+      if (defaultValueFactory != null) return defaultValueFactory();
       throw 'Required Field $name is missing from serialized data';
     }
 
     return _deserializer.frame(
-      () => _map[name]!,
+      () => value,
       () => endec.decode(ctx, _deserializer),
-      true,
-    );
-  }
-
-  @override
-  F optionalField<F>(String name, SerializationContext ctx, Endec<F> endec, F Function() defaultValueFactory) {
-    if (!_map.containsKey(name)) {
-      return defaultValueFactory();
-    }
-
-    return _deserializer.frame(
-      () => _map[name]!,
-      () => endec.decode(ctx, _deserializer),
-      true,
     );
   }
 }

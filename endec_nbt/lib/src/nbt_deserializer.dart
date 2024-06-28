@@ -143,32 +143,19 @@ class _NbtMapDeserializer<V> implements MapDeserializer<V>, StructDeserializer {
   (String, V) entry() => _deserializer.frame(
         () => _entries.current.value,
         () => (_entries.current.key, _valueEndec!.decode(_ctx!, _deserializer)),
-        false,
       );
 
   @override
-  F field<F>(String name, SerializationContext ctx, Endec<F> endec) {
-    if (!_map.containsKey(name)) {
-      throw NbtDecodeException("Required field $name is missing from serialized data");
+  F field<F>(String name, SerializationContext ctx, Endec<F> endec, {F Function()? defaultValueFactory}) {
+    final value = _map[name];
+    if (value == null) {
+      if (defaultValueFactory != null) return defaultValueFactory();
+      throw NbtDecodeException('Required field $name is missing from serialized data');
     }
 
     return _deserializer.frame(
-      () => _map[name]!,
+      () => value,
       () => endec.decode(ctx, _deserializer),
-      true,
-    );
-  }
-
-  @override
-  F optionalField<F>(String name, SerializationContext ctx, Endec<F> endec, F Function() defaultValueFactory) {
-    if (!_map.containsKey(name)) {
-      return defaultValueFactory();
-    }
-
-    return _deserializer.frame(
-      () => _map[name]!,
-      () => endec.decode(ctx, _deserializer),
-      true,
     );
   }
 }
@@ -189,7 +176,6 @@ class _NbtSequenceDeserializer<V> implements SequenceDeserializer<V> {
   V element() => _deserializer.frame(
         () => _entries.current,
         () => _elementEndec.decode(_ctx, _deserializer),
-        false,
       );
 }
 

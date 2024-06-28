@@ -119,13 +119,11 @@ final class _GenericStructField<S, F> implements StructField<S, F> {
 
   @override
   void encodeField(SerializationContext ctx, Serializer serializer, StructSerializer struct, S instance) =>
-      struct.field(_name, ctx, _endec, _getter(instance), optional: _defaultValueFactory != null);
+      struct.field(_name, ctx, _endec, _getter(instance), mayOmit: _defaultValueFactory != null);
 
   @override
   F decodeField(SerializationContext ctx, Deserializer deserializer, StructDeserializer struct) =>
-      _defaultValueFactory != null
-          ? struct.optionalField(_name, ctx, _endec, _defaultValueFactory!)
-          : struct.field(_name, ctx, _endec);
+      struct.field(_name, ctx, _endec, defaultValueFactory: _defaultValueFactory);
 }
 
 final class _FlatStructField<S, F> implements StructField<S, F> {

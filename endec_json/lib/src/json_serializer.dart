@@ -49,7 +49,7 @@ class JsonSerializer extends RecursiveSerializer<Object?> implements Serializer 
   void optional<E>(SerializationContext ctx, Endec<E> endec, E? value) {
     if (value != null) {
       endec.encode(ctx, this, value);
-    } else if (!isWritingOptionalStructField) {
+    } else {
       consume(null);
     }
   }
@@ -81,26 +81,19 @@ class _JsonMapSerializer<V> implements MapSerializer<V>, StructSerializer {
   @override
   void entry(String key, V value) => _serializer.frame((holder) {
         _valueEndec!.encode(_ctx!, _serializer, value);
-        _result[key] = holder.require("map value");
+        _result[key] = holder.require('map value');
       });
 
   @override
-  void field<F, _V extends F>(
-    String key,
-    SerializationContext ctx,
-    Endec<F> endec,
-    _V value, {
-    bool optional = false,
-  }) =>
-      _serializer.frame(
-        (holder) {
-          endec.encode(ctx, _serializer, value);
+  void field<F, _V extends F>(String key, SerializationContext ctx, Endec<F> endec, _V value, {bool mayOmit = false}) =>
+      _serializer.frame((holder) {
+        endec.encode(ctx, _serializer, value);
 
-          if (optional && !holder.wasEncoded) return;
-          _result[key] = holder.require("struct field");
-        },
-        isOptionalStructField: optional,
-      );
+        final encoded = holder.require('struct field');
+        if (mayOmit && encoded == null) return;
+
+        _result[key] = encoded;
+      });
 
   @override
   void end() => _serializer.consume(_result);
@@ -117,7 +110,7 @@ class _JsonSequenceSerializer<V> implements SequenceSerializer<V> {
   @override
   void element(V value) => _deserializer.frame((holder) {
         _elementEndec.encode(_ctx, _deserializer, value);
-        _result.add(holder.require("sequence element"));
+        _result.add(holder.require('sequence element'));
       });
 
   @override
@@ -129,5 +122,5 @@ class JsonEncodeError extends Error {
   JsonEncodeError(this.message);
 
   @override
-  String toString() => "JSON encoding failed: $message";
+  String toString() => 'JSON encoding failed: $message';
 }

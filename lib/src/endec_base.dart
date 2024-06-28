@@ -43,8 +43,8 @@ abstract mixin class Endec<T> {
 
   // --- constructors ---
 
-  factory Endec.of(Encoder<T> encoder, Decoder<T> decoder) = _SimpleEndec.new;
-  factory Endec.recursive(Endec<T> Function(Endec<T> thisRef) factory) = _RecursiveEndec.new;
+  factory Endec.of(Encoder<T> encoder, Decoder<T> decoder) = _SimpleEndec;
+  factory Endec.recursive(Endec<T> Function(Endec<T> thisRef) factory) = _RecursiveEndec;
 
   static Endec<Map<K, V>> map<K, V>(Endec<K> keyEndec, Endec<V> valueEndec) => structEndec<MapEntry<K, V>>()
       .with2Fields(

@@ -48,6 +48,5 @@ abstract interface class MapDeserializer<V> {
 }
 
 abstract interface class StructDeserializer {
-  F field<F>(String name, SerializationContext ctx, Endec<F> endec);
-  F optionalField<F>(String name, SerializationContext ctx, Endec<F> endec, F Function() defaultValueFactory);
+  F field<F>(String name, SerializationContext ctx, Endec<F> endec, {F Function()? defaultValueFactory});
 }

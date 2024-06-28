@@ -52,16 +52,39 @@ void main() {
 
   test('flatten present optional in optional field value', () {
     final optionalFieldEndec = structEndec<(int?,)>().with1Field(
-        Endec.i64.optionalOf().fieldOf("field", (struct) => struct.$1, defaultValueFactory: () => 0), (p0) => (p0,));
+      Endec.i64.optionalOf().fieldOf("field", (struct) => struct.$1, defaultValueFactory: () => 0),
+      (p0) => (p0,),
+    );
 
-    final requiredFieldEndec = structEndec<(int?,)>()
-        .with1Field(Endec.i64.optionalOf().fieldOf("field", (struct) => struct.$1), (p0) => (p0,));
+    final requiredFieldEndec = structEndec<(int?,)>().with1Field(
+      Endec.i64.optionalOf().fieldOf("field", (struct) => struct.$1),
+      (p0) => (p0,),
+    );
 
     expect(toNbt(optionalFieldEndec, (7,)), const NbtCompound({"field": NbtLong(7)}));
     expect(
         toNbt(requiredFieldEndec, (7,)),
         const NbtCompound({
           "field": NbtCompound({"present": NbtByte(1), "value": NbtLong(7)})
+        }));
+  });
+
+  test('omit only optional fields / retain required fields with optional values', () {
+    final optionalFieldEndec = structEndec<(int?,)>().with1Field(
+      Endec.i64.optionalOf().fieldOf("field", (struct) => struct.$1, defaultValueFactory: () => 0),
+      (p0) => (p0,),
+    );
+
+    final requiredFieldEndec = structEndec<(int?,)>().with1Field(
+      Endec.i64.optionalOf().fieldOf("field", (struct) => struct.$1),
+      (p0) => (p0,),
+    );
+
+    expect(toNbt(optionalFieldEndec, (null,)), const NbtCompound({}));
+    expect(
+        toNbt(requiredFieldEndec, (null,)),
+        const NbtCompound({
+          "field": NbtCompound({"present": NbtByte(0)})
         }));
   });
 }

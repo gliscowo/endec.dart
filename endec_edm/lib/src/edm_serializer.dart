@@ -54,7 +54,7 @@ class EdmSerializer extends RecursiveSerializer<EdmElement> {
       if (value == null) return;
 
       endec.encode(ctx, this, value);
-      result = holder.get;
+      result = holder.value;
     });
 
     consume(EdmElement.optional(result));
@@ -108,20 +108,12 @@ class _EdmMapSerializer<V> implements MapSerializer<V>, StructSerializer {
       });
 
   @override
-  void field<F, _V extends F>(
-    String name,
-    SerializationContext ctx,
-    Endec<F> endec,
-    _V value, {
-    bool optional = false,
-  }) =>
-      _serializer.frame(
-        (holder) {
-          endec.encode(ctx, _serializer, value);
-          _result[name] = holder.require('struct field');
-        },
-        isOptionalStructField: optional,
-      );
+  void field<F, _V extends F>(String name, SerializationContext ctx, Endec<F> endec, _V value,
+          {bool mayOmit = false}) =>
+      _serializer.frame((holder) {
+        endec.encode(ctx, _serializer, value);
+        _result[name] = holder.require('struct field');
+      });
 
   @override
   void end() => _serializer.consume(EdmElement.map(_result));

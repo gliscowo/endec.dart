@@ -10,6 +10,8 @@ NbtElement toNbt<T, S extends T>(Endec<T> endec, S value, {SerializationContext 
   return serializer.result;
 }
 
+final _optionalCompounds = Expando<()>();
+
 class NbtSerializer extends RecursiveSerializer {
   @override
   final bool selfDescribing = true;
@@ -49,15 +51,21 @@ class NbtSerializer extends RecursiveSerializer {
   void bytes(SerializationContext ctx, Uint8List bytes) => consume(NbtByteArray(Int8List.view(bytes.buffer)));
   @override
   void optional<E>(SerializationContext ctx, Endec<E> endec, E? value) {
-    if (isWritingOptionalStructField) {
-      if (value == null) return;
-      endec.encode(ctx, this, value);
-    } else {
-      final state = struct();
-      state.field("present", ctx, Endec.bool, value != null);
-      if (value != null) state.field("value", ctx, endec, value);
-      state.end();
+    final compoundValue = <String, NbtElement>{
+      'present': NbtByte(value != null ? 1 : 0),
+    };
+
+    if (value != null) {
+      frame((holder) {
+        endec.encode(ctx, this, value);
+        compoundValue['value'] = holder.require('present optional value');
+      });
     }
+
+    final compound = NbtCompound(compoundValue);
+    consume(compound);
+
+    _optionalCompounds[compound] = const ();
   }
 
   @override
@@ -88,22 +96,20 @@ class _NbtMapSerializer<V> implements MapSerializer<V>, StructSerializer {
       });
 
   @override
-  void field<F, _V extends F>(
-    String key,
-    SerializationContext ctx,
-    Endec<F> endec,
-    _V value, {
-    bool optional = false,
-  }) =>
-      _serializer.frame(
-        (holder) {
-          endec.encode(ctx, _serializer, value);
+  void field<F, _V extends F>(String key, SerializationContext ctx, Endec<F> endec, _V value, {bool mayOmit = false}) =>
+      _serializer.frame((holder) {
+        endec.encode(ctx, _serializer, value);
 
-          if (optional && !holder.wasEncoded) return;
-          _result[key] = holder.require("struct field");
-        },
-        isOptionalStructField: optional,
-      );
+        final encodedValue = holder.require('struct field');
+        if (mayOmit && _optionalCompounds[encodedValue] != null) {
+          if (encodedValue case NbtCompound(value: {'present': NbtByte(value: 0)})) return;
+
+          _result[key] = (encodedValue as NbtCompound).value['value'] as NbtElement;
+          return;
+        }
+
+        _result[key] = encodedValue;
+      });
 
   @override
   void end() => _serializer.consume(NbtCompound(_result));

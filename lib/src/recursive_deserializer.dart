@@ -1,26 +1,22 @@
 import 'dart:collection';
 
 import 'package:endec/endec.dart';
-import 'package:meta/meta.dart';
 
-typedef _Frame<T> = ({T Function() source, bool isStructField});
+typedef _Frame<T> = T Function();
 
 abstract class RecursiveDeserializer<T> implements Deserializer {
   final Queue<_Frame<T>> _frames = Queue();
   final T _serialized;
 
   RecursiveDeserializer(this._serialized) {
-    _frames.add((source: () => _serialized, isStructField: false));
+    _frames.add(() => _serialized);
   }
 
-  @protected
-  bool get isReadingStructField => _frames.last.isStructField;
+  V currentValue<V extends T>() => _frames.last() as V;
 
-  V currentValue<V extends T>() => _frames.last.source() as V;
-
-  V frame<V>(T Function() nextValue, V Function() action, bool isStructField) {
+  V frame<V>(T Function() nextValue, V Function() action) {
     try {
-      _frames.add((source: nextValue, isStructField: isStructField));
+      _frames.add(nextValue);
       return action();
     } finally {
       _frames.removeLast();

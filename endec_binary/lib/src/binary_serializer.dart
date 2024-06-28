@@ -135,7 +135,7 @@ class _BinaryStructSerializer implements StructSerializer {
   _BinaryStructSerializer(this._serializer);
 
   @override
-  void field<F, V extends F>(String name, SerializationContext ctx, Endec<F> endec, V value, {bool optional = false}) =>
+  void field<F, V extends F>(String name, SerializationContext ctx, Endec<F> endec, V value, {bool mayOmit = false}) =>
       endec.encode(ctx, _serializer, value);
 
   @override

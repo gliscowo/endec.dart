@@ -43,7 +43,7 @@ class JsonDeserializer extends RecursiveDeserializer<Object?> implements SelfDes
         }
         state.end();
       case _:
-        throw ArgumentError.value(element, "element", "Non-standard, unrecognized JSON element cannot be decoded");
+        throw ArgumentError.value(element, 'element', 'Non-standard, unrecognized JSON element cannot be decoded');
     }
   }
 
@@ -115,32 +115,19 @@ class _JsonMapDeserializer<V> implements MapDeserializer<V>, StructDeserializer 
   (String, V) entry() => _deserializer.frame(
         () => _entries.current.value,
         () => (_entries.current.key, _valueEndec!.decode(_ctx!, _deserializer)),
-        false,
       );
 
   @override
-  F field<F>(String name, SerializationContext ctx, Endec<F> endec) {
-    if (!_map.containsKey(name)) {
-      throw JsonDecodeException("Required Field $name is missing from serialized data");
+  F field<F>(String name, SerializationContext ctx, Endec<F> endec, {F Function()? defaultValueFactory}) {
+    final value = _map[name] as Object?;
+    if (value == null && !_map.containsKey(name)) {
+      if (defaultValueFactory != null) return defaultValueFactory();
+      throw JsonDecodeException('Required field $name is missing from serialized data');
     }
 
     return _deserializer.frame(
-      () => _map[name],
+      () => value,
       () => endec.decode(ctx, _deserializer),
-      true,
-    );
-  }
-
-  @override
-  F optionalField<F>(String name, SerializationContext ctx, Endec<F> endec, F Function() defaultValueFactory) {
-    if (!_map.containsKey(name)) {
-      return defaultValueFactory();
-    }
-
-    return _deserializer.frame(
-      () => _map[name]!,
-      () => endec.decode(ctx, _deserializer),
-      true,
     );
   }
 }
@@ -161,7 +148,6 @@ class _JsonSequenceDeserializer<V> implements SequenceDeserializer<V> {
   V element() => _deserializer.frame(
         () => _entries.current,
         () => _elementEndec.decode(_ctx, _deserializer),
-        false,
       );
 }
 
@@ -170,5 +156,5 @@ class JsonDecodeException implements Exception {
   JsonDecodeException(this.message);
 
   @override
-  String toString() => "JSON decoding failed: $message";
+  String toString() => 'JSON decoding failed: $message';
 }

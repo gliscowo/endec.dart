@@ -43,6 +43,6 @@ abstract interface class MapSerializer<V> {
 }
 
 abstract interface class StructSerializer {
-  void field<F, V extends F>(String name, SerializationContext ctx, Endec<F> endec, V value, {bool optional = false});
+  void field<F, V extends F>(String name, SerializationContext ctx, Endec<F> endec, V value, {bool mayOmit = false});
   void end();
 }

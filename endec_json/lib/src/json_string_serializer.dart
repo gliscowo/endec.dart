@@ -102,7 +102,7 @@ class _JsonStringMapSerializer<V> implements MapSerializer<V>, StructSerializer 
   }
 
   @override
-  void field<F, _V extends F>(String key, SerializationContext ctx, Endec<F> endec, _V value, {bool optional = false}) {
+  void field<F, _V extends F>(String key, SerializationContext ctx, Endec<F> endec, _V value, {bool mayOmit = false}) {
     if (_hadElement) _serializer._writer.writeln(', ');
     _serializer._writer.write('${_serializer._escapedString(key)}: ');
     endec.encode(ctx, _serializer, value);
