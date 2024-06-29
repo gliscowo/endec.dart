@@ -12,9 +12,7 @@ String toJson<T, S extends T>(Endec<T> endec, S value, {SerializationContext ctx
   return serializer._writer.buildResult();
 }
 
-class JsonStringSerializer implements Serializer {
-  @override
-  final bool selfDescribing = false;
+class JsonStringSerializer implements SelfDescribingSerializer {
   final BlockWriter _writer = BlockWriter();
 
   JsonStringSerializer();

@@ -9,10 +9,7 @@ EdmElement toEdm<T, S extends T>(Endec<T> endec, S value, {SerializationContext 
   return serializer.result;
 }
 
-class EdmSerializer extends RecursiveSerializer<EdmElement> {
-  @override
-  final bool selfDescribing = true;
-
+class EdmSerializer extends RecursiveSerializer<EdmElement> implements SelfDescribingSerializer {
   EdmSerializer() : super(EdmElement.map(const {}));
 
   @override

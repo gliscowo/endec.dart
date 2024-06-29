@@ -11,9 +11,6 @@ Uint8List toBinary<T, S extends T>(Endec<T> endec, S value, {SerializationContex
 }
 
 class BinarySerializer implements Serializer {
-  @override
-  final bool selfDescribing = false;
-
   ByteData _buffer = ByteData(2048);
   int _cursor = 0;
 

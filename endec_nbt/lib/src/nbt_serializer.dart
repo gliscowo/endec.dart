@@ -12,10 +12,7 @@ NbtElement toNbt<T, S extends T>(Endec<T> endec, S value, {SerializationContext 
 
 final _optionalCompounds = Expando<()>();
 
-class NbtSerializer extends RecursiveSerializer {
-  @override
-  final bool selfDescribing = true;
-
+class NbtSerializer extends RecursiveSerializer implements SelfDescribingSerializer {
   NbtSerializer() : super(NbtCompound(const {}));
 
   @override

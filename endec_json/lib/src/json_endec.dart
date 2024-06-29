@@ -12,7 +12,7 @@ class JsonEndec with Endec<Object?> {
 
   @override
   void encode(SerializationContext ctx, Serializer serializer, Object? value) {
-    if (serializer.selfDescribing) {
+    if (serializer is SelfDescribingSerializer) {
       JsonDeserializer(value).any(ctx, serializer);
     } else {
       serializer.string(ctx, jsonEncode(value));

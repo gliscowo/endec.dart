@@ -8,10 +8,7 @@ Object toJson<T, S extends T>(Endec<T> endec, S value, {SerializationContext ctx
   return serializer.result;
 }
 
-class JsonSerializer extends RecursiveSerializer<Object?> implements Serializer {
-  @override
-  final bool selfDescribing = true;
-
+class JsonSerializer extends RecursiveSerializer<Object?> implements SelfDescribingSerializer {
   JsonSerializer() : super(null);
 
   @override

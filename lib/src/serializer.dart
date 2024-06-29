@@ -28,9 +28,9 @@ abstract interface class Serializer {
   SequenceSerializer<E> sequence<E>(SerializationContext ctx, Endec<E> elementEndec, int length);
   MapSerializer<V> map<V>(SerializationContext ctx, Endec<V> valueEndec, int length);
   StructSerializer struct();
-
-  bool get selfDescribing;
 }
+
+abstract interface class SelfDescribingSerializer extends Serializer {}
 
 abstract interface class SequenceSerializer<E> {
   void element(E element);

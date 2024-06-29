@@ -14,7 +14,7 @@ class NbtEndec with Endec<NbtElement> {
 
   @override
   void encode(SerializationContext ctx, Serializer serializer, NbtElement value) {
-    if (serializer.selfDescribing) {
+    if (serializer is SelfDescribingSerializer) {
       NbtDeserializer(value).any(ctx, serializer);
     } else {
       final writer = NbtWriter()..i8(value.type.index);
