@@ -69,7 +69,7 @@ String _endecForType(
     if (keyType.isDartCoreString) {
       endec = '$valueEndec.mapOf()';
     } else {
-      endec = 'Endec.map(${_endecForType(context, settings, enclosingType, keyType)}, $valueEndec)';
+      endec = 'Endec.improperMap(${_endecForType(context, settings, enclosingType, keyType)}, $valueEndec)';
     }
   }
   // other struct

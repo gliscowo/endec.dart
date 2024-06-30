@@ -17,7 +17,7 @@ final _$ThisHasFieldsEndec = structEndec<ThisHasFields>().with2Fields(
 final _$Class2Endec = structEndec<Class2>().with4Fields(
   _$ThisHasFieldsEndec.fieldOf('as_a_field', (struct) => struct.asAField),
   myEndec().fieldOf('bool_list', (struct) => struct.boolList),
-  Endec.map(Endec.i64, Endec.f32.optionalOf().listOf())
+  Endec.improperMap(Endec.i64, Endec.f32.optionalOf().listOf())
       .optionalOf()
       .fieldOf('mapnite', (struct) => struct.mapnite),
   _$ThisHasFieldsEndec.mapOf().fieldOf('mapnite2', (struct) => struct.mapnite2),
