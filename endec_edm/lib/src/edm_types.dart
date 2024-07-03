@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
@@ -26,6 +27,7 @@ enum EdmElementType {
   map
 }
 
+// TODO: string does not conform to spec
 final class EdmElement<T> {
   final T value;
   final EdmElementType type;
@@ -97,7 +99,14 @@ final class EdmElement<T> {
     return formatter.buildResult();
   }
 
-  void _format(BlockWriter formatter) => formatter.write("${type.name}($value)");
+  void _format(BlockWriter formatter) {
+    if (value is Uint8List) {
+      final encoded = base64Encode(value as Uint8List);
+      formatter.write('bytes($encoded)');
+    } else {
+      formatter.write("${type.name}($value)");
+    }
+  }
 }
 
 final class EdmMap extends EdmElement<Map<String, EdmElement>> {
@@ -112,11 +121,11 @@ final class EdmMap extends EdmElement<Map<String, EdmElement>> {
   void _format(BlockWriter formatter) {
     formatter.startBlock('map({', '})');
 
-    for (final (idx, MapEntry(:key, :value)) in value.entries.indexed) {
+    for (final (idx, MapEntry(:key, value: element)) in value.entries.indexed) {
       formatter.write("$key: ");
-      value._format(formatter);
+      element._format(formatter);
 
-      if (idx < this.value.length - 1) formatter.writeln(",");
+      if (idx < value.length - 1) formatter.writeln(",");
     }
 
     formatter.endBlock();
@@ -135,9 +144,9 @@ final class EdmSequence extends EdmElement<List<EdmElement>> {
   void _format(BlockWriter formatter) {
     formatter.startBlock('sequence([', '])');
 
-    for (final (idx, value) in value.indexed) {
-      value._format(formatter);
-      if (idx < this.value.length - 1) formatter.writeln(",");
+    for (final (idx, element) in value.indexed) {
+      element._format(formatter);
+      if (idx < value.length - 1) formatter.writeln(",");
     }
 
     formatter.endBlock();
@@ -153,7 +162,7 @@ final class EdmOptional<T> extends EdmElement<EdmElement<T>?> {
     if (value != null) {
       value!._format(formatter);
     } else {
-      formatter.write("null");
+      formatter.write("");
     }
     formatter.write(")");
   }

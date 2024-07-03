@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:endec/endec.dart';
 import 'package:endec_edm/endec_edm.dart';
 import 'package:test/test.dart';
@@ -16,7 +18,7 @@ map({
     i32(17),
     string(a)
   ]),
-  hmmm: optional(null),
+  hmmm: optional(),
   uhhh: optional(map({
     b: optional(f32(16.5))
   }))
@@ -62,5 +64,19 @@ map({
     expect(decoded.$1, [34, 35]);
     expect(decoded.$2, isNull);
     expect(decoded.$3, equals({'b': 16.5}));
+  });
+
+  test('edm encode / decode', () {
+    final edm = EdmElement.map({
+      "ah_yes": EdmElement.sequence([EdmElement.i32(17), EdmElement.string("a")]),
+      "hmmm": EdmElement.optional(null),
+      "uhhh": EdmElement.optional(EdmElement.map({"b": EdmElement.optional(EdmElement.f32(16.5))}))
+    });
+
+    expect(decodeEdmElement(encodeEdmElement(edm)), edm);
+  });
+
+  test('bytes formatting', () {
+    print(EdmElement.bytes(Uint8List.fromList([1, 2, 4, 8, 16])));
   });
 }
