@@ -4,7 +4,9 @@ import 'package:endec/endec.dart';
 
 import 'json_endec.dart';
 
-T fromJson<T>(Endec<T> endec, Object json, {SerializationContext ctx = SerializationContext.empty}) {
+T fromJson<T>(Endec<T> endec, Object json, {SerializationContext? ctx}) {
+  ctx ??= SerializationContext(attributes: [humanReadable]);
+
   final deserializer = JsonDeserializer(json);
   return endec.decode(ctx, deserializer);
 }

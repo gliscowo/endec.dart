@@ -5,6 +5,8 @@ import 'package:endec/src/serializer.dart';
 
 import 'endec_base.dart';
 
+const humanReadable = MarkerAttribute('human_readable');
+
 sealed class SerializationAttribute {
   final String name;
   const SerializationAttribute(this.name);
