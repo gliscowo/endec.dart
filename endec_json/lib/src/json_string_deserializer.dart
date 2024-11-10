@@ -20,8 +20,10 @@ class JsonStringDeserializer implements Deserializer {
   JsonStringDeserializer(String input) : _input = input.trimLeft();
 
   _TokenType get _currentToken => _tokenCache ??= _TokenType.forChar(_input[_pointer]);
-  void _advance([int by = 1]) {
-    _pointer += by;
+  void _advance([int by = 1]) => _movePointer(_pointer + by);
+
+  void _movePointer(int to) {
+    _pointer = to;
     _tokenCache = null;
   }
 
@@ -168,7 +170,13 @@ class JsonStringDeserializer implements Deserializer {
   }
 
   @override
-  StructDeserializer struct() => throw UnimplementedError();
+  StructDeserializer struct() {
+    if (_currentToken != _TokenType.objectBegin) throw 'Expected object, found: $_currentToken';
+
+    _advance();
+    _skipWhitespace();
+    return _JsonStructDeserializer(this);
+  }
 
   @override
   V tryRead<V>(V Function(Deserializer deserializer) reader) {
@@ -261,6 +269,92 @@ class _JsonStringObjectDeserializer<V> implements MapDeserializer<V> {
   bool moveNext() => _elements.moveNext();
 }
 
+class _JsonStructDeserializer implements StructDeserializer {
+  static const _objectParts = {_TokenType.objectEnd, _TokenType.elementSeparator};
+
+  final JsonStringDeserializer _deserializer;
+  final Map<String, int> _valueIndicesByKey = {};
+
+  _JsonStructDeserializer(this._deserializer);
+
+  @override
+  F field<F>(String name, SerializationContext ctx, Endec<F> endec, {F Function()? defaultValueFactory}) {
+    if (_valueIndicesByKey[name] case var idx?) {
+      final prevPointer = _deserializer._pointer;
+
+      _deserializer._movePointer(idx);
+      final result = endec.decode(ctx, _deserializer);
+      _skipAfterValue();
+      _deserializer._movePointer(prevPointer);
+
+      return result;
+    }
+
+    while (true) {
+      var key = _deserializer._parseString();
+      _deserializer._skipWhitespace();
+      if (_deserializer._currentToken != _TokenType.keyValueSeparator) {
+        throw 'Expected ":" to separate key from value, found ${_deserializer._currentToken}';
+      }
+
+      _deserializer._advance();
+      _deserializer._skipWhitespace();
+
+      if (key == name) {
+        final result = endec.decode(ctx, _deserializer);
+        _skipAfterValue();
+
+        return result;
+      } else {
+        _valueIndicesByKey[key] = _deserializer._pointer;
+        _skipValue();
+      }
+    }
+  }
+
+  void _skipValue() {
+    var arrayDepth = 0, objectDepth = 0;
+    while (true) {
+      switch (_deserializer._currentToken) {
+        case _TokenType.objectBegin:
+          objectDepth++;
+          _deserializer._advance();
+        case _TokenType.arrayBegin:
+          arrayDepth++;
+          _deserializer._advance();
+        case _TokenType.objectEnd:
+          if (objectDepth == 0) {
+            return;
+          } else {
+            objectDepth--;
+            _deserializer._advance();
+          }
+        case _TokenType.arrayEnd:
+          arrayDepth--;
+          _deserializer._advance();
+        case _TokenType.elementSeparator:
+          _deserializer._advance();
+
+          if (objectDepth == 0 && arrayDepth == 0) {
+            return;
+          }
+        default:
+          _deserializer._advance();
+      }
+    }
+  }
+
+  void _skipAfterValue() {
+    _deserializer._skipWhitespace();
+    if (!_objectParts.contains(_deserializer._currentToken)) {
+      throw 'Expected "," for next entry or "}" to close object, found ${_deserializer._currentToken}';
+    }
+
+    if (_deserializer._currentToken == _TokenType.elementSeparator) _deserializer._advance();
+    _deserializer._skipWhitespace();
+  }
+}
+
 enum _TokenType {
   elementSeparator,
   objectBegin,
@@ -302,16 +396,37 @@ enum _TokenType {
 }
 
 void main(List<String> args) {
-  final result = Endec.i32.listOf().mapOf().mapOf().decode(
-        SerializationContext.empty,
-        JsonStringDeserializer(r'''
+//   final result = Endec.i32.listOf().mapOf().mapOf().decode(
+//         SerializationContext.empty,
+//         JsonStringDeserializer(r'''
+// {
+//   "a": {"_": [1]},
+//   "b": {"_": [2, 3], "-": [3, 2]},
+//   "c": {"_": [4, 5, 6]}
+// }
+// '''),
+//       );
+
+  final endec = structEndec<(int, String, List<Map<double, bool>>)>().with3Fields(
+    Endec.i32.fieldOf('int', (struct) => struct.$1),
+    Endec.string.fieldOf('string', (struct) => struct.$2),
+    Endec.map((d) => d.toString(), double.parse, Endec.bool).listOf().fieldOf('bruh', (struct) => struct.$3),
+    (p0, p1, p2) => (p0, p1, p2),
+  );
+
+  final result = endec.decode(
+    SerializationContext.empty,
+    JsonStringDeserializer(r'''
 {
-  "a": {"_": [1]},
-  "b": {"_": [2, 3], "-": [3, 2]}, 
-  "c": {"_": [4, 5, 6]}
+  "string": "bruh",
+  "bruh": [
+    {"1.5": false, "3.8678": true},
+    {"-1.5": true, "2.1e5": false}
+  ],
+  "int": 69
 }
 '''),
-      );
+  );
   print(result);
 }
 
