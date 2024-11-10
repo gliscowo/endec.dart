@@ -9,6 +9,8 @@ T fromNbt<T>(Endec<T> endec, NbtElement nbt, {SerializationContext ctx = Seriali
   return endec.decode(ctx, deserializer);
 }
 
+final _potentialFlattenedOptional = Expando<()>();
+
 class NbtDeserializer extends RecursiveDeserializer<NbtElement> implements SelfDescribingDeserializer {
   NbtDeserializer(super._serialized);
   @override
@@ -103,6 +105,11 @@ class NbtDeserializer extends RecursiveDeserializer<NbtElement> implements SelfD
   Uint8List bytes(SerializationContext ctx) => Uint8List.view(currentValue<NbtByteArray>().value.buffer);
   @override
   E? optional<E>(SerializationContext ctx, Endec<E> endec) {
+    final frameValue = currentValue();
+    if (_potentialFlattenedOptional[frameValue] != null) {
+      return endec.decode(ctx, this);
+    }
+
     final state = struct();
     return state.field("present", ctx, Endec.bool) ? state.field("value", ctx, endec) : null;
   }
@@ -151,6 +158,10 @@ class _NbtMapDeserializer<V> implements MapDeserializer<V>, StructDeserializer {
     if (value == null) {
       if (defaultValueFactory != null) return defaultValueFactory();
       throw NbtDecodeException('Required field $name is missing from serialized data');
+    }
+
+    if (defaultValueFactory != null) {
+      _potentialFlattenedOptional[value] = const ();
     }
 
     return _deserializer.frame(

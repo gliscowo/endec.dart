@@ -87,4 +87,23 @@ void main() {
           "field": NbtCompound({"present": NbtByte(0)})
         }));
   });
+
+  test('decode flattened optional field', () {
+    final optionalFieldEndec = structEndec<(int?,)>().with1Field(
+      Endec.i64.optionalOf().fieldOf("field", (struct) => struct.$1, defaultValueFactory: () => 0),
+      (p0) => (p0,),
+    );
+
+    expect(fromNbt(optionalFieldEndec, const NbtCompound({'field': NbtLong(69)})), (69,));
+  });
+
+  test('decode non-optional defaulted field', () {
+    final optionalFieldEndec = structEndec<(int,)>().with1Field(
+      Endec.i64.fieldOf("field", (struct) => struct.$1, defaultValueFactory: () => 0),
+      (p0) => (p0,),
+    );
+
+    expect(fromNbt(optionalFieldEndec, const NbtCompound({'field': NbtLong(69)})), (69,));
+    expect(fromNbt(optionalFieldEndec, const NbtCompound()), (0,));
+  });
 }
