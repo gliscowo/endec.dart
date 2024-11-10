@@ -16,41 +16,41 @@ class NbtDeserializer extends RecursiveDeserializer<NbtElement> implements SelfD
   @override
   void any(SerializationContext ctx, Serializer visitor) => _decodeElement(ctx, visitor, currentValue());
   void _decodeElement(SerializationContext ctx, Serializer visitor, NbtElement element) {
-    switch (element.type) {
-      case NbtElementType.byte:
-        visitor.i8(ctx, (element as NbtByte).value);
-      case NbtElementType.short:
-        visitor.i16(ctx, (element as NbtShort).value);
-      case NbtElementType.int:
-        visitor.i32(ctx, (element as NbtInt).value);
-      case NbtElementType.long:
-        visitor.i64(ctx, (element as NbtLong).value);
-      case NbtElementType.float:
-        visitor.f32(ctx, (element as NbtFloat).value);
-      case NbtElementType.double:
-        visitor.f64(ctx, (element as NbtDouble).value);
-      case NbtElementType.string:
-        visitor.string(ctx, (element as NbtString).value);
-      case NbtElementType.byteArray:
-        visitor.bytes(ctx, Uint8List.view((element as NbtByteArray).value.buffer));
-      case NbtElementType.intArray:
-        final list = (element as NbtIntArray).value;
+    switch (element) {
+      case NbtByte _:
+        visitor.i8(ctx, element.value);
+      case NbtShort _:
+        visitor.i16(ctx, element.value);
+      case NbtInt _:
+        visitor.i32(ctx, element.value);
+      case NbtLong _:
+        visitor.i64(ctx, element.value);
+      case NbtFloat _:
+        visitor.f32(ctx, element.value);
+      case NbtDouble _:
+        visitor.f64(ctx, element.value);
+      case NbtString _:
+        visitor.string(ctx, element.value);
+      case NbtByteArray _:
+        visitor.bytes(ctx, Uint8List.view(element.value.buffer));
+      case NbtIntArray _:
+        final list = element.value;
 
         var state = visitor.sequence(ctx, Endec.i32, list.length);
         for (final element in list) {
           state.element(element);
         }
         state.end();
-      case NbtElementType.longArray:
-        final list = (element as NbtLongArray).value;
+      case NbtLongArray _:
+        final list = element.value;
 
         var state = visitor.sequence(ctx, Endec.i64, list.length);
         for (final element in list) {
           state.element(element);
         }
         state.end();
-      case NbtElementType.list:
-        final list = (element as NbtList).value;
+      case NbtList _:
+        final list = element.value;
 
         var state =
             visitor.sequence(ctx, Endec<NbtElement>.of(_decodeElement, (ctx, deserializer) => NbtByte(0)), list.length);
@@ -58,8 +58,8 @@ class NbtDeserializer extends RecursiveDeserializer<NbtElement> implements SelfD
           state.element(element);
         }
         state.end();
-      case NbtElementType.compound:
-        final map = (element as NbtCompound).value;
+      case NbtCompound _:
+        final map = element.value;
 
         var state =
             visitor.map(ctx, Endec<NbtElement>.of(_decodeElement, (ctx, deserializer) => NbtByte(0)), map.length);
@@ -67,8 +67,6 @@ class NbtDeserializer extends RecursiveDeserializer<NbtElement> implements SelfD
           state.entry(key, value);
         }
         state.end();
-      case _:
-        throw ArgumentError.value(element, "element", "Non-standard, unrecognized NbtElement cannot be decoded");
     }
   }
 

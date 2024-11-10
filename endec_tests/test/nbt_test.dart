@@ -104,6 +104,6 @@ void main() {
     );
 
     expect(fromNbt(optionalFieldEndec, const NbtCompound({'field': NbtLong(69)})), (69,));
-    expect(fromNbt(optionalFieldEndec, const NbtCompound()), (0,));
+    expect(fromNbt(optionalFieldEndec, const NbtCompound({})), (0,));
   });
 }
