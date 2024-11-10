@@ -78,7 +78,7 @@ String _endecForType(
     if (type.element.name == 'Uint8List' && type.element.library.name == 'dart.typed_data') {
       endec = 'Endec.bytes';
     }
-    // serilizable struct
+    // serializable struct
     else if (type.element case ClassElement classElement) {
       if (context.hasGenerateAnnotation(classElement)) {
         if (classElement.library == context.library) {
