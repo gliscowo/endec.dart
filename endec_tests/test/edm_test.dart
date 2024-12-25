@@ -79,4 +79,18 @@ map({
   test('bytes formatting', () {
     print(EdmElement.bytes(Uint8List.fromList([1, 2, 4, 8, 16])));
   });
+
+  test('malformed input exception', () {
+    expect(
+      () => fromEdm(
+        Endec.i32.mapOf(),
+        EdmElement.wrapMap({'a': EdmElement.string(':)')}),
+      ),
+      throwsA(isA<MalformedInputException>().having(
+        (e) => e.toString(),
+        'toString()',
+        r'Malformed input at $.a: Expected a i32, got a string',
+      )),
+    );
+  });
 }

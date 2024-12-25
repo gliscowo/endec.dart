@@ -42,22 +42,53 @@ final class _ValueAttributeInstance<T> implements AttributeInstance {
   _ValueAttributeInstance(this.attribute, this.value);
 }
 
+// --- tracing ---
+
+sealed class EndecTraceElement {}
+
+class FieldElement implements EndecTraceElement {
+  final String name;
+  const FieldElement(this.name);
+
+  @override
+  String toString() => '.$name';
+}
+
+class IndexElement implements EndecTraceElement {
+  final int index;
+  const IndexElement(this.index);
+
+  @override
+  String toString() => '[$index]';
+}
+
+class EndecTrace {
+  final List<EndecTraceElement> elements;
+  const EndecTrace({this.elements = const []});
+
+  EndecTrace push(EndecTraceElement element) => EndecTrace(elements: [...elements, element]);
+
+  @override
+  String toString() => '\$${elements.join()}';
+}
+
 // --- context ---
 
 class SerializationContext {
-  static const empty = SerializationContext._({}, {});
+  static const empty = SerializationContext._({}, {}, EndecTrace());
 
   final Map<SerializationAttribute, Object?> _attributeValues;
   final Set<SerializationAttribute> _suppressedAttributes;
+  final EndecTrace location;
 
-  const SerializationContext._(this._attributeValues, this._suppressedAttributes);
+  const SerializationContext._(this._attributeValues, this._suppressedAttributes, this.location);
 
   factory SerializationContext({
     List<AttributeInstance> attributes = const [],
     Set<SerializationAttribute> suppressed = const {},
   }) =>
       attributes.isNotEmpty || suppressed.isNotEmpty
-          ? SerializationContext._(_unpackAttributes(attributes), suppressed)
+          ? SerializationContext._(_unpackAttributes(attributes), suppressed, const EndecTrace())
           : empty;
 
   SerializationContext copyWith({
@@ -65,10 +96,8 @@ class SerializationContext {
     Set<SerializationAttribute> suppressed = const {},
   }) =>
       attributes.isNotEmpty || suppressed.isNotEmpty
-          ? SerializationContext._(
-              Map.of(_attributeValues)..addAll(_unpackAttributes(attributes)),
-              Set.of(_suppressedAttributes)..addAll(suppressed),
-            )
+          ? SerializationContext._(Map.of(_attributeValues)..addAll(_unpackAttributes(attributes)),
+              Set.of(_suppressedAttributes)..addAll(suppressed), location)
           : this;
 
   SerializationContext copyWithout({
@@ -76,22 +105,21 @@ class SerializationContext {
     Set<SerializationAttribute> suppressed = const {},
   }) =>
       attributes.isNotEmpty || suppressed.isNotEmpty
-          ? SerializationContext._(
-              (() {
-                final newAttributes = Map.of(_attributeValues);
-                for (final attribute in attributes) {
-                  newAttributes.remove(attribute.attribute);
-                }
-                return newAttributes;
-              })(),
-              Set.of(_suppressedAttributes)..removeAll(suppressed),
-            )
+          ? SerializationContext._((() {
+              final newAttributes = Map.of(_attributeValues);
+              for (final attribute in attributes) {
+                newAttributes.remove(attribute.attribute);
+              }
+              return newAttributes;
+            })(), Set.of(_suppressedAttributes)..removeAll(suppressed), location)
           : this;
 
   SerializationContext operator |(SerializationContext other) => this != empty || other != empty
       ? SerializationContext._(
           Map.of(_attributeValues)..addAll(other._attributeValues),
           Set.of(_suppressedAttributes)..addAll(other._suppressedAttributes),
+          // TODO this is cringe
+          location,
         )
       : empty;
 
@@ -105,8 +133,32 @@ class SerializationContext {
       ? _attributeValues[attribute] as A
       : throw ArgumentError.value(attribute, "attribute", "Attribute $attribute is not present in this context");
 
+  SerializationContext pushField(String fieldName) => SerializationContext._(
+        _attributeValues,
+        _suppressedAttributes,
+        location.push(FieldElement(fieldName)),
+      );
+
+  SerializationContext pushIndex(int index) => SerializationContext._(
+        _attributeValues,
+        _suppressedAttributes,
+        location.push(IndexElement(index)),
+      );
+
+  Never malformedInput(String message) => throw MalformedInputException(location, message);
+
   static Map<SerializationAttribute, Object?> _unpackAttributes(List<AttributeInstance> attributes) =>
       Map.fromEntries(attributes.map((e) => MapEntry(e.attribute, e.value)));
+}
+
+class MalformedInputException implements Exception {
+  final EndecTrace location;
+  final String message;
+
+  MalformedInputException(this.location, this.message);
+
+  @override
+  String toString() => 'Malformed input at $location: $message';
 }
 
 // --- attribute branching ---

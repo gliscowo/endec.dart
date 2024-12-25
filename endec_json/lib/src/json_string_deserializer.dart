@@ -170,7 +170,7 @@ class JsonStringDeserializer implements Deserializer {
   }
 
   @override
-  StructDeserializer struct() {
+  StructDeserializer struct(SerializationContext ctx) {
     if (_currentToken != _TokenType.objectBegin) throw 'Expected object, found: $_currentToken';
 
     _advance();

@@ -38,7 +38,7 @@ class EncodedValue<T> {
   bool get wasEncoded => _encoded;
 
   T require(String name) {
-    if (!_encoded) throw RecursiveEncodingError("Endec for $name serialized nothing");
+    if (!_encoded) throw RecursiveEncodingError('Endec for $name serialized nothing');
     return value;
   }
 }

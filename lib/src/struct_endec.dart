@@ -31,7 +31,7 @@ abstract class StructEndec<S> with Endec<S> {
 
   @override
   S decode(SerializationContext ctx, Deserializer deserializer) =>
-      decodeStruct(ctx, deserializer, deserializer.struct());
+      decodeStruct(ctx, deserializer, deserializer.struct(ctx));
 
   @override
   StructEndec<U> xmap<U>(U Function(S self) to, S Function(U other) from) => _XmapStructEndec(this, to, from);

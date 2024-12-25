@@ -71,7 +71,7 @@ class BinaryDeserializer implements Deserializer {
       _BinaryMapDeserializer(this, ctx, valueEndec);
 
   @override
-  StructDeserializer struct() => _BinaryStructDeserializer(this);
+  StructDeserializer struct(SerializationContext ctx) => _BinaryStructDeserializer(this);
 
   @override
   V tryRead<V>(V Function(Deserializer deserializer) reader) {

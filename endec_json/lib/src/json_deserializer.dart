@@ -17,7 +17,7 @@ class JsonDeserializer extends RecursiveDeserializer<Object?> implements SelfDes
   JsonDeserializer(super._serialized);
 
   @override
-  void any(SerializationContext ctx, Serializer visitor) => _decodeElement(ctx, visitor, currentValue());
+  void any(SerializationContext ctx, Serializer visitor) => _decodeElement(ctx, visitor, currentValue(ctx));
   void _decodeElement(SerializationContext ctx, Serializer visitor, Object? element) {
     switch (element) {
       case null:
@@ -50,47 +50,49 @@ class JsonDeserializer extends RecursiveDeserializer<Object?> implements SelfDes
   }
 
   @override
-  int i8(SerializationContext ctx) => currentValue();
+  int i8(SerializationContext ctx) => currentValue(ctx);
   @override
-  int u8(SerializationContext ctx) => currentValue();
+  int u8(SerializationContext ctx) => currentValue(ctx);
 
   @override
-  int i16(SerializationContext ctx) => currentValue();
+  int i16(SerializationContext ctx) => currentValue(ctx);
   @override
-  int u16(SerializationContext ctx) => currentValue();
+  int u16(SerializationContext ctx) => currentValue(ctx);
 
   @override
-  int i32(SerializationContext ctx) => currentValue();
+  int i32(SerializationContext ctx) => currentValue(ctx);
   @override
-  int u32(SerializationContext ctx) => currentValue();
+  int u32(SerializationContext ctx) => currentValue(ctx);
 
   @override
-  int i64(SerializationContext ctx) => currentValue();
+  int i64(SerializationContext ctx) => currentValue(ctx);
   @override
-  int u64(SerializationContext ctx) => currentValue();
+  int u64(SerializationContext ctx) => currentValue(ctx);
 
   @override
-  double f32(SerializationContext ctx) => currentValue();
+  double f32(SerializationContext ctx) => currentValue(ctx);
   @override
-  double f64(SerializationContext ctx) => currentValue();
+  double f64(SerializationContext ctx) => currentValue(ctx);
 
   @override
-  bool boolean(SerializationContext ctx) => currentValue();
+  bool boolean(SerializationContext ctx) => currentValue(ctx);
   @override
-  String string(SerializationContext ctx) => currentValue();
+  String string(SerializationContext ctx) => currentValue(ctx);
   @override
-  Uint8List bytes(SerializationContext ctx) => Uint8List.fromList(currentValue<List<dynamic>>().cast<int>());
+  Uint8List bytes(SerializationContext ctx) => Uint8List.fromList(currentValue<List<dynamic>>(ctx).cast<int>());
   @override
-  E? optional<E>(SerializationContext ctx, Endec<E> endec) => currentValue() != null ? endec.decode(ctx, this) : null;
+  E? optional<E>(SerializationContext ctx, Endec<E> endec) =>
+      currentValue(ctx) != null ? endec.decode(ctx, this) : null;
 
   @override
   SequenceDeserializer<E> sequence<E>(SerializationContext ctx, Endec<E> elementEndec) =>
-      _JsonSequenceDeserializer(this, ctx, elementEndec, currentValue<List<dynamic>>());
+      _JsonSequenceDeserializer(this, ctx, elementEndec, currentValue<List<dynamic>>(ctx));
   @override
   MapDeserializer<V> map<V>(SerializationContext ctx, Endec<V> valueEndec) =>
-      _JsonMapDeserializer.map(this, ctx, valueEndec, currentValue<Map<String, dynamic>>());
+      _JsonMapDeserializer.map(this, ctx, valueEndec, currentValue<Map<String, dynamic>>(ctx));
   @override
-  StructDeserializer struct() => _JsonMapDeserializer.struct(this, currentValue<Map<String, dynamic>>());
+  StructDeserializer struct(SerializationContext ctx) =>
+      _JsonMapDeserializer.struct(this, currentValue<Map<String, dynamic>>(ctx));
 }
 
 class _JsonMapDeserializer<V> implements MapDeserializer<V>, StructDeserializer {
@@ -116,7 +118,7 @@ class _JsonMapDeserializer<V> implements MapDeserializer<V>, StructDeserializer 
   @override
   (String, V) entry() => _deserializer.frame(
         () => _entries.current.value,
-        () => (_entries.current.key, _valueEndec!.decode(_ctx!, _deserializer)),
+        () => (_entries.current.key, _valueEndec!.decode(_ctx!.pushField(_entries.current.key), _deserializer)),
       );
 
   @override
@@ -124,12 +126,12 @@ class _JsonMapDeserializer<V> implements MapDeserializer<V>, StructDeserializer 
     final value = _map[name] as Object?;
     if (value == null && !_map.containsKey(name)) {
       if (defaultValueFactory != null) return defaultValueFactory();
-      throw JsonDecodeException('Required field $name is missing from serialized data');
+      ctx.malformedInput('Required field $name is missing from serialized data');
     }
 
     return _deserializer.frame(
       () => value,
-      () => endec.decode(ctx, _deserializer),
+      () => endec.decode(ctx.pushField(name), _deserializer),
     );
   }
 }
@@ -138,25 +140,17 @@ class _JsonSequenceDeserializer<V> implements SequenceDeserializer<V> {
   final JsonDeserializer _deserializer;
   final SerializationContext _ctx;
   final Endec<V> _elementEndec;
-  final Iterator<dynamic> _entries;
+  final Iterator<(int, dynamic)> _entries;
 
   _JsonSequenceDeserializer(this._deserializer, this._ctx, this._elementEndec, List<dynamic> list)
-      : _entries = list.iterator;
+      : _entries = list.indexed.iterator;
 
   @override
   bool moveNext() => _entries.moveNext();
 
   @override
   V element() => _deserializer.frame(
-        () => _entries.current,
-        () => _elementEndec.decode(_ctx, _deserializer),
+        () => _entries.current.$2,
+        () => _elementEndec.decode(_ctx.pushIndex(_entries.current.$1), _deserializer),
       );
-}
-
-class JsonDecodeException implements Exception {
-  final String message;
-  JsonDecodeException(this.message);
-
-  @override
-  String toString() => 'JSON decoding failed: $message';
 }

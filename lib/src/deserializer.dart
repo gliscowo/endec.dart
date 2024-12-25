@@ -28,7 +28,7 @@ abstract interface class Deserializer {
 
   SequenceDeserializer<E> sequence<E>(SerializationContext ctx, Endec<E> elementEndec);
   MapDeserializer<V> map<V>(SerializationContext ctx, Endec<V> valueEndec);
-  StructDeserializer struct();
+  StructDeserializer struct(SerializationContext ctx);
 
   V tryRead<V>(V Function(Deserializer deserializer) reader);
 }

@@ -48,10 +48,53 @@ void main() {
 
   test('omit optional field during encoding / read default during decoding', () {
     final endec = structEndec<(int?,)>().with1Field(
-        Endec.i64.optionalOf().fieldOf("field", (struct) => struct.$1, defaultValueFactory: () => 0), (p0) => (p0,));
+      Endec.i64.optionalOf().fieldOf("field", (struct) => struct.$1, defaultValueFactory: () => 0),
+      (p0) => (p0,),
+    );
 
     expect(toJson(endec, (null,)), <String, dynamic>{});
     expect(fromJson(endec, <String, dynamic>{}), (0,));
+  });
+
+  test('decoding error', () {
+    final endec = structEndec<(int,)>()
+        .with1Field(
+          Endec.i32.fieldOf('happy_field', (struct) => struct.$1),
+          (p0) => (p0,),
+        )
+        .listOf()
+        .mapOf();
+
+    expect(
+      () => fromJson(endec, {
+        'some_key': [
+          {'happy_field': 1},
+          {'happy_field': 2},
+          {'happy_field': false},
+        ]
+      }),
+      throwsA(isA<MalformedInputException>().having(
+        (e) => e.toString(),
+        'toString()',
+        r'Malformed input at $.some_key[2].happy_field: Expected a int, got a bool',
+      )),
+    );
+
+    expect(
+      () => fromJson(endec, {
+        'some_key': [
+          {'happy_field': 1},
+          <String, int>{}
+        ]
+      }),
+      throwsA(
+        isA<MalformedInputException>().having(
+          (e) => e.toString(),
+          'toString()',
+          r'Malformed input at $.some_key[1]: Required field happy_field is missing from serialized data',
+        ),
+      ),
+    );
   });
 }
 

@@ -79,14 +79,14 @@ class _JsonMapSerializer<V> implements MapSerializer<V>, StructSerializer {
 
   @override
   void entry(String key, V value) => _serializer.frame((holder) {
-        _valueEndec!.encode(_ctx!, _serializer, value);
+        _valueEndec!.encode(_ctx!.pushField(key), _serializer, value);
         _result[key] = holder.require('map value');
       });
 
   @override
   void field<F, _V extends F>(String key, SerializationContext ctx, Endec<F> endec, _V value, {bool mayOmit = false}) =>
       _serializer.frame((holder) {
-        endec.encode(ctx, _serializer, value);
+        endec.encode(ctx.pushField(key), _serializer, value);
 
         final encoded = holder.require('struct field');
         if (mayOmit && encoded == null) return;
@@ -108,7 +108,7 @@ class _JsonSequenceSerializer<V> implements SequenceSerializer<V> {
 
   @override
   void element(V value) => _deserializer.frame((holder) {
-        _elementEndec.encode(_ctx, _deserializer, value);
+        _elementEndec.encode(_ctx.pushIndex(_result.length), _deserializer, value);
         _result.add(holder.require('sequence element'));
       });
 

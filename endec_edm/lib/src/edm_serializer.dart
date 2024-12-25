@@ -78,7 +78,7 @@ class _EdmSequenceSerializer<V> implements SequenceSerializer<V> {
 
   @override
   void element(V element) => _serializer.frame((holder) {
-        _elementEndec.encode(_ctx, _serializer, element);
+        _elementEndec.encode(_ctx.pushIndex(_result.length), _serializer, element);
         _result.add(holder.require('sequence element'));
       });
 
@@ -100,7 +100,7 @@ class _EdmMapSerializer<V> implements MapSerializer<V>, StructSerializer {
 
   @override
   void entry(String key, V value) => _serializer.frame((holder) {
-        _valueEndec!.encode(_ctx!, _serializer, value);
+        _valueEndec!.encode(_ctx!.pushField(key), _serializer, value);
         _result[key] = holder.require('map value');
       });
 
@@ -108,7 +108,7 @@ class _EdmMapSerializer<V> implements MapSerializer<V>, StructSerializer {
   void field<F, _V extends F>(String name, SerializationContext ctx, Endec<F> endec, _V value,
           {bool mayOmit = false}) =>
       _serializer.frame((holder) {
-        endec.encode(ctx, _serializer, value);
+        endec.encode(ctx.pushField(name), _serializer, value);
         _result[name] = holder.require('struct field');
       });
 

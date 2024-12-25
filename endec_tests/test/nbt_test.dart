@@ -106,4 +106,15 @@ void main() {
     expect(fromNbt(optionalFieldEndec, const NbtCompound({'field': NbtLong(69)})), (69,));
     expect(fromNbt(optionalFieldEndec, const NbtCompound({})), (0,));
   });
+
+  test('test name', () {
+    expect(
+      () => fromNbt(Endec.i32, NbtLong(69)),
+      throwsA(isA<MalformedInputException>().having(
+        (e) => e.toString(),
+        'toString()',
+        r'Malformed input at $: Expected a NbtInt, got a NbtLong',
+      )),
+    );
+  });
 }

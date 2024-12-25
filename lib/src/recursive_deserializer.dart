@@ -12,7 +12,10 @@ abstract class RecursiveDeserializer<T> implements Deserializer {
     _frames.add(() => _serialized);
   }
 
-  V currentValue<V extends T>() => _frames.last() as V;
+  V currentValue<V extends T>(SerializationContext ctx) {
+    final lastValue = _frames.last();
+    return lastValue is V ? lastValue : ctx.malformedInput('Expected a $V, got a ${lastValue.runtimeType}');
+  }
 
   V frame<V>(T Function() nextValue, V Function() action) {
     try {
