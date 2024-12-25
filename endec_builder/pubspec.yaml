@@ -3,14 +3,13 @@ description: A build system builder for automatically generating struct endecs
 version: 0.1.0
 repository: https://github.com/gliscowo/endec.dart
 
-publish_to: none
+resolution: workspace
 
 environment:
-  sdk: ^3.3.0
+  sdk: ^3.6.0
 
 dependencies:
-  endec:
-    path: ..
+  endec: ^0.1.0
   analyzer: ^6.4.1
   build: ^2.4.1
   meta: ^1.15.0

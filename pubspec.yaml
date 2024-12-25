@@ -4,7 +4,7 @@ repository: https://github.com/gliscowo/endec.dart
 version: 0.1.0
 
 environment:
-  sdk: ^3.2.0
+  sdk: ^3.6.0
 
 dependencies:
   meta: ^1.12.0
@@ -12,3 +12,11 @@ dependencies:
 dev_dependencies:
   benchmark_harness: ^2.2.2
   lints: ^4.0.0
+
+workspace:
+  - endec_binary
+  - endec_builder
+  - endec_edm
+  - endec_json
+  - endec_nbt
+  - endec_tests

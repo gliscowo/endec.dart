@@ -3,27 +3,21 @@ description: Test suites for all other endec packages
 version: 0.1.0
 repository: https://github.com/gliscowo/endec.dart
 
-publish_to: none
+resolution: workspace
 
 environment:
-  sdk: ^3.3.0
+  sdk: ^3.6.0
 
 dependencies:
-  endec:
-    path: ..
-  endec_json:
-    path: ../endec_json
-  endec_nbt:
-    path: ../endec_nbt
-  endec_binary:
-    path: ../endec_binary
-  endec_edm:
-    path: ../endec_edm
+  endec: ^0.1.0
+  endec_json: ^0.1.0
+  endec_nbt: ^0.1.0
+  endec_binary: ^0.1.0
+  endec_edm: ^0.1.0
 
 dev_dependencies:
   build_runner: ^2.4.11
   lints: ^4.0.0
   path: ^1.9.0
   test: ^1.24.0
-  endec_builder:
-    path: ../endec_builder  
+  endec_builder: ^0.1.0

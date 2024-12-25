@@ -3,15 +3,14 @@ description: JSON format support for endec
 version: 0.1.0
 repository: https://github.com/gliscowo/endec.dart
 
-publish_to: none
+resolution: workspace
 
 environment:
-  sdk: ^3.3.0
+  sdk: ^3.6.0
 
 # Add regular dependencies here.
 dependencies:
-  endec:
-    path: ..
+  endec: ^0.1.0
   meta: ^1.15.0
 
 dev_dependencies:
