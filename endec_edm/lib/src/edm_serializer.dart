@@ -1,7 +1,8 @@
 import 'dart:typed_data';
 
-import 'package:endec/endec.dart';
 import 'package:endec_edm/endec_edm.dart';
+
+import 'package:endec/endec.dart';
 
 EdmElement toEdm<T, S extends T>(Endec<T> endec, S value, {SerializationContext ctx = SerializationContext.empty}) {
   final serializer = EdmSerializer();

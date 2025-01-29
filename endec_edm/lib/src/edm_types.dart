@@ -3,8 +3,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
-import 'package:endec/endec.dart';
 import 'package:meta/meta.dart';
+
+import 'package:endec/endec.dart';
 
 enum EdmElementType {
   i8,

@@ -1,7 +1,8 @@
 import 'dart:convert';
 
-import 'package:endec/endec.dart';
 import 'package:endec_json/endec_json.dart';
+
+import 'package:endec/endec.dart';
 
 abstract class ParentClass {
   static final fieldsEndec = structEndec<(String, int)>().with2Fields(

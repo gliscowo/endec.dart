@@ -1,6 +1,6 @@
 import 'dart:collection';
 
-import 'package:endec/endec.dart';
+import '../endec.dart';
 
 typedef _Frame<T> = T Function();
 

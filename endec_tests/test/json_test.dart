@@ -1,6 +1,7 @@
-import 'package:endec/endec.dart';
 import 'package:endec_json/endec_json.dart';
 import 'package:test/test.dart';
+
+import 'package:endec/endec.dart';
 
 void main() {
   test('encode string', () {

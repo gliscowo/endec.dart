@@ -1,21 +1,10 @@
-name: endec
-description: A format-agnostic serialization framework inspired by serde and DataFixerUpper
-repository: https://github.com/gliscowo/endec.dart
-version: 0.1.0
-
-publish_to: https://pub.wispforest.io
-
+name: _
+publish_to: none
 environment:
   sdk: ^3.6.0
 
-dependencies:
-  meta: ^1.12.0
-
-dev_dependencies:
-  benchmark_harness: ^2.2.2
-  lints: ^5.1.1
-
 workspace:
+  - endec
   - endec_binary
   - endec_builder
   - endec_edm

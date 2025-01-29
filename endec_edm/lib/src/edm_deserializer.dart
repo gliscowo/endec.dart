@@ -1,7 +1,8 @@
 import 'dart:typed_data';
 
-import 'package:endec/endec.dart';
 import 'package:endec_edm/endec_edm.dart';
+
+import 'package:endec/endec.dart';
 
 T fromEdm<T>(Endec<T> endec, EdmElement serialized, {SerializationContext ctx = SerializationContext.empty}) =>
     endec.decode(ctx, EdmDeserializer(serialized));

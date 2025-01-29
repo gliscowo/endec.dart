@@ -1,8 +1,9 @@
 import 'dart:typed_data';
 
-import 'package:endec/endec.dart';
 import 'package:endec_edm/endec_edm.dart';
 import 'package:test/test.dart';
+
+import 'package:endec/endec.dart';
 
 void main() {
   test('toString formatting', () {

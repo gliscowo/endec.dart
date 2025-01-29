@@ -1,5 +1,6 @@
-import 'package:endec/endec.dart';
 import 'package:endec_json/endec_json.dart';
+
+import 'package:endec/endec.dart';
 
 // void main(List<String> args) {
 //   var encoded = toNbt(

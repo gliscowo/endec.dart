@@ -1,7 +1,8 @@
 // ignore_for_file: camel_case_types
 
-import 'package:endec/endec.dart';
 import 'package:meta/meta_meta.dart';
+
+import 'src/endec_base.dart';
 
 enum IntegralType {
   i8,

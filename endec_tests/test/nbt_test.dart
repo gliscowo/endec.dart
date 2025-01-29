@@ -1,10 +1,11 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:endec/endec.dart';
 import 'package:endec_nbt/endec_nbt.dart';
 import 'package:path/path.dart';
 import 'package:test/test.dart';
+
+import 'package:endec/endec.dart';
 
 void main() {
   File asset(List<String> nameParts) => File(joinAll(["assets", "nbt", ...nameParts]));

@@ -1,9 +1,8 @@
 // --- attributes ---
 
-import 'package:endec/src/deserializer.dart';
-import 'package:endec/src/serializer.dart';
-
+import 'deserializer.dart';
 import 'endec_base.dart';
+import 'serializer.dart';
 
 const humanReadable = MarkerAttribute('human_readable');
 
@@ -46,17 +45,17 @@ final class _ValueAttributeInstance<T> implements AttributeInstance {
 
 sealed class EndecTraceElement {}
 
-class FieldElement implements EndecTraceElement {
+class FieldTraceElement implements EndecTraceElement {
   final String name;
-  const FieldElement(this.name);
+  const FieldTraceElement(this.name);
 
   @override
   String toString() => '.$name';
 }
 
-class IndexElement implements EndecTraceElement {
+class IndexTraceElement implements EndecTraceElement {
   final int index;
-  const IndexElement(this.index);
+  const IndexTraceElement(this.index);
 
   @override
   String toString() => '[$index]';
@@ -136,13 +135,13 @@ class SerializationContext {
   SerializationContext pushField(String fieldName) => SerializationContext._(
         _attributeValues,
         _suppressedAttributes,
-        location.push(FieldElement(fieldName)),
+        location.push(FieldTraceElement(fieldName)),
       );
 
   SerializationContext pushIndex(int index) => SerializationContext._(
         _attributeValues,
         _suppressedAttributes,
-        location.push(IndexElement(index)),
+        location.push(IndexTraceElement(index)),
       );
 
   Never malformedInput(String message) => throw MalformedInputException(location, message);

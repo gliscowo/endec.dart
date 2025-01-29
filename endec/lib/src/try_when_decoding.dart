@@ -1,8 +1,7 @@
-import 'package:endec/src/deserializer.dart';
-import 'package:endec/src/serialization_context.dart';
-import 'package:endec/src/serializer.dart';
-
+import 'deserializer.dart';
 import 'endec_base.dart';
+import 'serialization_context.dart';
+import 'serializer.dart';
 
 extension TryWhenDecoding<T> on Endec<T> {
   Endec<T> tryWhenDecoding(List<Endec<T>> alternativeDecoders) {

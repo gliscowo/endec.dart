@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:endec/endec.dart';
 import 'package:meta/meta.dart';
 
+
 String toJson<T, S extends T>(Endec<T> endec, S value, {SerializationContext ctx = SerializationContext.empty}) {
   final serializer = JsonStringSerializer();
   endec.encode(ctx, serializer, value);
