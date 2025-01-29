@@ -1,5 +1,5 @@
 @experimental
-library json_string_serializer;
+library;
 
 import 'dart:typed_data';
 

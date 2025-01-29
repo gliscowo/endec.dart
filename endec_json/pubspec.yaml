@@ -4,15 +4,17 @@ version: 0.1.0
 repository: https://github.com/gliscowo/endec.dart
 
 resolution: workspace
+publish_to: https://pub.wispforest.io
 
 environment:
   sdk: ^3.6.0
 
-# Add regular dependencies here.
 dependencies:
-  endec: ^0.1.0
+  endec:
+    hosted: https://pub.wispforest.io
+    version: ^0.1.0
   meta: ^1.15.0
 
 dev_dependencies:
   benchmark_harness: ^2.2.2
-  lints: ^4.0.0
+  lints: ^5.1.1

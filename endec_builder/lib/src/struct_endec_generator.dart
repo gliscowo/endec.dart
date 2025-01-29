@@ -29,14 +29,14 @@ class GeneratorContext {
   bool isEndecType(DartType type) => type.element == endecType.element;
   bool isExcluded(FieldElement field) => field.metadata.any((element) => element.element == excludeAnnotation);
   bool hasGenerateAnnotation(Element element) =>
-      element.metadata.any((element) => element.element?.enclosingElement == generateAnnotation);
+      element.metadata.any((element) => element.element?.enclosingElement3 == generateAnnotation);
 
   /// Try to resolve the @EndecField annotation on [field]. If no such
   /// annotation was applied, return [null]
   FieldSettings? settingsForField(FieldElement field) {
     final annotation = field.metadata
         .cast<ElementAnnotation?>()
-        .firstWhere((element) => element!.element?.enclosingElement == endecFieldAnnotation, orElse: () => null);
+        .firstWhere((element) => element!.element?.enclosingElement3 == endecFieldAnnotation, orElse: () => null);
 
     if (annotation == null) return null;
     return FieldSettings.fromAnnotation(ConstantReader(annotation.computeConstantValue()));

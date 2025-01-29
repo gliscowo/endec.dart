@@ -16,13 +16,13 @@ String endecForField(
     fieldSettings?.endecSupplier != null
         ? switch (fieldSettings!.endecSupplier!) {
             FunctionElement function => '${function.name}()',
-            MethodElement method => '${method.enclosingElement.name}.${method.name}()',
+            MethodElement method => '${method.enclosingElement3.name}.${method.name}()',
             _ => throw 'Unsupported endec supplier function'
           }
         : _endecForType(
             context,
             settings,
-            (field.enclosingElement as InstanceElement).thisType,
+            (field.enclosingElement3 as InstanceElement).thisType,
             field.type,
             field.metadata,
           );

@@ -3,6 +3,8 @@ description: A format-agnostic serialization framework inspired by serde and Dat
 repository: https://github.com/gliscowo/endec.dart
 version: 0.1.0
 
+publish_to: https://pub.wispforest.io
+
 environment:
   sdk: ^3.6.0
 
@@ -11,7 +13,7 @@ dependencies:
 
 dev_dependencies:
   benchmark_harness: ^2.2.2
-  lints: ^4.0.0
+  lints: ^5.1.1
 
 workspace:
   - endec_binary

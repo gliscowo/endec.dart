@@ -1,5 +1,5 @@
 @experimental
-library json_string_deserializer;
+library;
 
 import 'dart:convert';
 import 'dart:typed_data';
