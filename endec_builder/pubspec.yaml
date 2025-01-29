@@ -1,6 +1,6 @@
 name: endec_builder
 description: A build system builder for automatically generating struct endecs
-version: 0.1.0
+version: 0.1.1
 repository: https://github.com/gliscowo/endec.dart
 
 resolution: workspace

@@ -61,6 +61,11 @@ String _endecForType(
     final elementType = (type as ParameterizedType).typeArguments.first;
     endec = '${_endecForType(context, settings, enclosingType, elementType)}.listOf()';
   }
+  // set
+  else if (type.isDartCoreSet) {
+    final elementType = (type as ParameterizedType).typeArguments.first;
+    endec = '${_endecForType(context, settings, enclosingType, elementType)}.setOf()';
+  }
   // map
   else if (type.isDartCoreMap) {
     final keyType = (type as ParameterizedType).typeArguments[0];
