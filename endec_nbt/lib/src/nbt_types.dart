@@ -156,7 +156,7 @@ final class NbtIntArray extends NbtArray<Int32List> {
 
     final list = Int32List(length);
     for (var i = 0; i < length; i++) {
-      list.add(input.i32());
+      list[i] = input.i32();
     }
 
     return NbtIntArray(list);
@@ -181,7 +181,7 @@ final class NbtLongArray extends NbtArray<Int64List> {
 
     final list = Int64List(length);
     for (var i = 0; i < length; i++) {
-      list.add(input.i64());
+      list[i] = input.i64();
     }
 
     return NbtLongArray(list);

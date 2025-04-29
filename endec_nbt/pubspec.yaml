@@ -1,6 +1,6 @@
 name: endec_nbt
 description: An implementation of Minecraft's Named Binary Tag format for endec
-version: 0.1.0
+version: 0.1.1
 repository: https://github.com/gliscowo/endec.dart
 
 resolution: workspace
