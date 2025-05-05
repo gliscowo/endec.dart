@@ -1,11 +1,10 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:endec/endec.dart';
 import 'package:endec_nbt/endec_nbt.dart';
 import 'package:path/path.dart';
 import 'package:test/test.dart';
-
-import 'package:endec/endec.dart';
 
 void main() {
   File asset(List<String> nameParts) => File(joinAll(["assets", "nbt", ...nameParts]));
@@ -117,5 +116,13 @@ void main() {
         r'Malformed input at $: Expected a NbtInt, got a NbtLong',
       )),
     );
+  });
+
+  test('snbt primitives', () {
+    expect(snbtToNbt('true'), NbtByte(1));
+    expect(snbtToNbt('false'), NbtByte(0));
+    expect(snbtToNbt('15l'), NbtLong(15));
+    expect(snbtToNbt('bruh'), NbtString('bruh'));
+    expect(snbtToNbt("'br\\'uh'"), NbtString('br\'uh'));
   });
 }

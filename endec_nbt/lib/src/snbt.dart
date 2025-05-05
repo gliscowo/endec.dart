@@ -243,7 +243,7 @@ class _SnbtReader {
 
   String consumeWhile(bool Function(String char) predicate) {
     final result = StringBuffer();
-    while (predicate(current)) {
+    while (_cursor < _input.length && predicate(current)) {
       result.writeCharCode(_input.codeUnitAt(_cursor));
       _cursor++;
     }
