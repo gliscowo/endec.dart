@@ -42,14 +42,14 @@ class NbtWriter {
   int _cursor = 0;
 
   void i8(int value) => _write((idx, value, _) => _buffer.setInt8(idx, value), value, 1);
-  void i16(int value) => _write(_buffer.setInt16, value, 2);
-  void i32(int value) => _write(_buffer.setInt32, value, 4);
-  void i64(int value) => _write(_buffer.setInt64, value, 8);
+  void i16(int value) => _write((idx, value, endian) => _buffer.setInt16(idx, value, endian), value, 2);
+  void i32(int value) => _write((idx, value, endian) => _buffer.setInt32(idx, value, endian), value, 4);
+  void i64(int value) => _write((idx, value, endian) => _buffer.setInt64(idx, value, endian), value, 8);
 
-  void f32(double value) => _write(_buffer.setFloat32, value, 4);
-  void f64(double value) => _write(_buffer.setFloat64, value, 8);
+  void f32(double value) => _write((idx, value, endian) => _buffer.setFloat32(idx, value, endian), value, 4);
+  void f64(double value) => _write((idx, value, endian) => _buffer.setFloat64(idx, value, endian), value, 8);
 
-  void _write<T>(void Function(int idx, T value, Endian) writer, T value, int size) {
+  void _write<T>(void Function(int idx, T value, Endian endian) writer, T value, int size) {
     _ensureCapacity(size);
 
     writer(_cursor, value, Endian.big);
@@ -59,7 +59,7 @@ class NbtWriter {
   void string(String value) {
     var encoded = utf8.encode(value);
 
-    _write(_buffer.setUint16, encoded.length, 2);
+    _write((idx, value, endian) => _buffer.setUint16(idx, value, endian), encoded.length, 2);
     _writeBytes(encoded, (buffer) => buffer.asUint8List());
   }
 
