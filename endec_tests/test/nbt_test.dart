@@ -31,7 +31,7 @@ void main() {
   test('bigtest to snbt', () {
     expect(
       binaryToNbt(asset(const ["bigtest.nbt"]).readAsBytesSync(), compressed: true).toSnbt(),
-      asset(["bigtest.snbt"]).readAsStringSync(),
+      asset(["bigtest.snbt"]).readAsStringSync().replaceAll("\r\n", "\n"),
     );
   });
 
