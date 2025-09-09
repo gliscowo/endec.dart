@@ -32,24 +32,32 @@ class BinarySerializer implements Serializer {
   void u8(SerializationContext ctx, int value) => _write((idx, value, _) => _buffer.setUint8(idx, value), value, 1);
 
   @override
-  void i16(SerializationContext ctx, int value) => _write(_buffer.setInt16, value, 2);
+  void i16(SerializationContext ctx, int value) =>
+      _write((idx, value, endian) => _buffer.setInt16(idx, value, endian), value, 2);
   @override
-  void u16(SerializationContext ctx, int value) => _write(_buffer.setUint16, value, 2);
+  void u16(SerializationContext ctx, int value) =>
+      _write((idx, value, endian) => _buffer.setUint16(idx, value, endian), value, 2);
 
   @override
-  void i32(SerializationContext ctx, int value) => _write(_buffer.setInt32, value, 4);
+  void i32(SerializationContext ctx, int value) =>
+      _write((idx, value, endian) => _buffer.setInt32(idx, value, endian), value, 4);
   @override
-  void u32(SerializationContext ctx, int value) => _write(_buffer.setUint32, value, 4);
+  void u32(SerializationContext ctx, int value) =>
+      _write((idx, value, endian) => _buffer.setUint32(idx, value, endian), value, 4);
 
   @override
-  void i64(SerializationContext ctx, int value) => _write(_buffer.setInt64, value, 8);
+  void i64(SerializationContext ctx, int value) =>
+      _write((idx, value, endian) => _buffer.setInt64(idx, value, endian), value, 8);
   @override
-  void u64(SerializationContext ctx, int value) => _write(_buffer.setUint64, value, 8);
+  void u64(SerializationContext ctx, int value) =>
+      _write((idx, value, endian) => _buffer.setUint64(idx, value, endian), value, 8);
 
   @override
-  void f32(SerializationContext ctx, double value) => _write(_buffer.setFloat32, value, 4);
+  void f32(SerializationContext ctx, double value) =>
+      _write((idx, value, endian) => _buffer.setFloat32(idx, value, endian), value, 4);
   @override
-  void f64(SerializationContext ctx, double value) => _write(_buffer.setFloat64, value, 8);
+  void f64(SerializationContext ctx, double value) =>
+      _write((idx, value, endian) => _buffer.setFloat64(idx, value, endian), value, 8);
 
   void _write<T>(void Function(int idx, T value, Endian) writer, T value, int size) {
     _ensureCapacity(size);
