@@ -90,9 +90,15 @@ class BinarySerializer implements Serializer {
   Uint8List get result => Uint8List.view(_buffer.buffer, 0, _cursor);
 
   void _ensureCapacity(int bytes) {
-    if (_cursor + bytes <= _buffer.lengthInBytes) return;
+    final requiredSize = _cursor + bytes;
+    var bufferSize = _buffer.lengthInBytes;
+    if (requiredSize <= bufferSize) return;
 
-    final expanded = ByteData(_buffer.lengthInBytes * 2);
+    do {
+      bufferSize *= 2;
+    } while (requiredSize > bufferSize);
+
+    final expanded = ByteData(bufferSize);
     expanded.buffer.asUint8List().setRange(0, _buffer.lengthInBytes, _buffer.buffer.asUint8List());
 
     _buffer = expanded;
